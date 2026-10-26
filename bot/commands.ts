@@ -30,7 +30,10 @@ export function parseCommand(input: string): Command {
   return { kind: "job", workflow, source: link ? link[1] : "", text: link ? rest.slice(link[0].length).trim() : rest };
 }
 
-export const HELP = `Gửi video lên Google Drive, rồi gửi lệnh:
+export const HELP = `Cách 1: gửi video thẳng vào đây (dưới 20 MB), ghi lệnh ở phần chú thích.
+Cách 2: up video lên Google Drive, rồi gửi lệnh kèm link.
+
+Lệnh:
 
 /ads <link Drive> <yêu cầu>
 Quảng cáo shop quay thật. Ví dụ:
@@ -42,7 +45,8 @@ Claude viết kịch bản, bạn duyệt, rồi giọng AI đọc.
 /dub <link Drive>
 <kịch bản thuyết minh ở các dòng tiếp theo>
 
-Không ghi link thì lấy video mới nhất trong thư mục input.
+Không gửi video, không ghi link thì lấy video mới nhất trong thư mục input trên Drive.
+Video đã edit dưới 50 MB được gửi thẳng về đây, kèm link Drive.
 
 /status: xem các job gần đây
 /retry <mã job>: chạy tiếp job bị lỗi`;

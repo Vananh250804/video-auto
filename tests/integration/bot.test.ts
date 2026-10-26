@@ -1,40 +1,50 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { VideoBot } from "../../bot/bot.ts";
 import { createJob, loadJob, saveJob } from "../../core/jobs/job.ts";
-import { stepsFor } from "../../core/jobs/runner.ts";
+import { stepsFor, type RunnerDeps } from "../../core/jobs/runner.ts";
 import { readReview, saveReview } from "../../core/review/review-state.ts";
-import type { TelegramApi, TgButton } from "../../integrations/delivery/telegram/index.ts";
+import type { TelegramApi, TgButton, TgUpdate } from "../../integrations/delivery/telegram/index.ts";
 
 const CHAT = 111;
 let sent: { chat: number; text: string; buttons?: TgButton[][] }[] = [];
 let ran: string[] = [];
 let jobsDir = "";
+let downloads: { fileId: string; dest: string }[] = [];
+let videosSent: { chat: number; file: string }[] = [];
 
 const tg: TelegramApi = {
   async getUpdates() { return []; },
   async sendMessage(chat, text, buttons) { sent.push({ chat, text, buttons }); },
   async answerCallback() {},
   async clearButtons() {},
+  async downloadFile(fileId, dest) { downloads.push({ fileId, dest }); },
+  async sendVideo(chat, file) { videosSent.push({ chat, file }); },
 };
 
-function makeBot(llmAnswer = "{}") {
+function makeBot(llmAnswer = "{}", runner?: (dir: string, deps: RunnerDeps) => ReturnType<typeof loadJob>) {
   return new VideoBot({
     tg,
     allowedChats: new Set([CHAT]),
     jobsDir,
     runnerDeps: { llm: () => ({ name: "fake", complete: async () => llmAnswer }), tts: () => ({}) as any, asr: () => ({}) as any },
-    runner: async (dir) => { ran.push(dir); return loadJob(dir); },
+    runner: async (dir, deps) => { ran.push(dir); return runner ? runner(dir, deps) : loadJob(dir); },
   });
 }
 const msg = (text: string, chat = CHAT) => ({ update_id: 1, message: { message_id: 1, chat: { id: chat }, text } });
+const videoMsg = (caption: string | undefined, extra: Partial<NonNullable<TgUpdate["message"]>> = {}): TgUpdate => ({
+  update_id: 1,
+  message: { message_id: 1, chat: { id: CHAT }, caption, video: { file_id: "VID123", file_size: 5_000_000, file_name: "túi: mới.mp4" }, ...extra },
+});
 
 beforeEach(async () => {
   sent = [];
   ran = [];
+  downloads = [];
+  videosSent = [];
   jobsDir = await mkdtemp(join(tmpdir(), "bot-"));
 });
 
@@ -111,4 +121,49 @@ test("/retry chỉ chạy lại job lỗi", async () => {
   assert.deepEqual(ran, [dir]);
   await bot.handleUpdate(msg("/status"));
   assert.match(sent.at(-1)!.text, /j4 \(faceless\)/);
+});
+
+test("video gửi thẳng kèm lệnh ở chú thích: lấy video đó làm nguồn", async () => {
+  await makeBot().handleUpdate(videoMsg("/ads https://drive.google.com/file/d/abcdefghij12/view làm nổi giá"));
+  await new Promise((r) => setTimeout(r, 20));
+  const job = await loadJob(ran[0]);
+  assert.equal(job.source, "telegram:VID123:túi_ mới.mp4");
+  assert.equal(job.request, "làm nổi giá");
+  assert.match(sent[0].text, /Đã nhận job/);
+});
+
+test("video gửi dạng file cũng nhận, file không phải video thì bỏ qua", async () => {
+  const doc = (mime: string) => videoMsg("/ads chữ freeship", { video: undefined, document: { file_id: "DOC1", mime_type: mime, file_name: "a.mov" } });
+  await makeBot().handleUpdate(doc("video/quicktime"));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal((await loadJob(ran[0])).source, "telegram:DOC1:a.mov");
+  await makeBot().handleUpdate(doc("application/pdf"));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal((await loadJob(ran[1])).source, "");
+});
+
+test("video quá 20 MB bị từ chối, video không có lệnh thì hướng dẫn", async () => {
+  await makeBot().handleUpdate(videoMsg("/ads", { video: { file_id: "BIG", file_size: 30 * 1024 * 1024 } }));
+  assert.match(sent.at(-1)!.text, /30 MB.*20 MB/);
+  await makeBot().handleUpdate(videoMsg(undefined));
+  assert.match(sent.at(-1)!.text, /phần chú thích/);
+  assert.equal(ran.length, 0);
+});
+
+test("job chạy: tải video Telegram qua bot, xong thì gửi video về chat", async () => {
+  const bot = makeBot("{}", async (dir, deps) => {
+    const file = await deps.telegramFile!("VID123", join(dir, "input"), "a.mp4");
+    const final = join(dir, "final.mp4");
+    await writeFile(final, "x");
+    const job = await loadJob(dir);
+    await deps.notify(job, { type: "done", final, url: "https://drive/x" });
+    assert.equal(file.path, join(dir, "input", "a.mp4"));
+    return job;
+  });
+  await bot.handleUpdate(videoMsg("/ads"));
+  await new Promise((r) => setTimeout(r, 50));
+  assert.deepEqual(downloads.map((d) => d.fileId), ["VID123"]);
+  assert.equal(videosSent.length, 1);
+  assert.equal(videosSent[0].chat, CHAT);
+  assert.match(sent.at(-1)!.text, /Xong job[\s\S]*https:\/\/drive\/x/);
 });

@@ -55,7 +55,7 @@ npm run typecheck
 
 ## Luồng tự động
 
-- `bot/`: Telegram (`/ads`, `/faceless`, `/dub`, `/status`, `/retry`, nút duyệt kịch bản). Chỉ chat trong `TELEGRAM_ALLOWED_CHAT_IDS` được dùng.
+- `bot/`: Telegram (`/ads`, `/faceless`, `/dub`, `/status`, `/retry`, nút duyệt kịch bản). Chỉ chat trong `TELEGRAM_ALLOWED_CHAT_IDS` được dùng. Nhận video gửi thẳng (≤20 MB, lệnh ở chú thích, nguồn `telegram:<file_id>:<tên>`) hoặc link Drive; kết quả ≤50 MB được gửi lại vào chat.
 - `core/jobs/runner.ts`: chạy các bước `download → <steps của workflow> → upload`, lưu `workspace/jobs/<id>/job.json` sau mỗi bước. Chạy lại thì tiếp từ bước chưa xong. Bước `script` dừng job ở `waiting_approval` tới khi kịch bản được duyệt.
 - `core/queue/`: chạy từng job một.
 - Storage: `google-drive` (REST API qua fetch, OAuth refresh token) hoặc `local` (`workspace/inbox` → `workspace/outbox`).
