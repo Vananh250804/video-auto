@@ -40,3 +40,15 @@ export interface LlmProvider {
   // Gửi một prompt, nhận lại văn bản trả lời
   complete(prompt: string): Promise<string>;
 }
+
+export interface StoredFile {
+  path: string;
+  name: string;
+}
+
+export interface StorageProvider {
+  readonly name: string;
+  // ref: link Google Drive, id file/thư mục, hoặc đường dẫn local tùy provider. Thư mục → lấy video mới nhất.
+  download(ref: string, destDir: string): Promise<StoredFile>;
+  upload(file: string, name: string): Promise<{ url: string }>;
+}

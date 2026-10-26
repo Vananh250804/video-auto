@@ -23,9 +23,13 @@ export interface AppConfig {
     tts: string;
     asr: string;
     llm: string;
+    storage: string;
   };
   claude: {
     model: string;
+  };
+  plan: {
+    auto_highlight: boolean;
   };
   script: {
     words_per_second: number;
