@@ -23,6 +23,12 @@ providers:
   asr: elevenlabs             # elevenlabs | whisper
   llm: claude
 
+claude:
+  model: ""                   # để trống = model mặc định của tài khoản; hoặc sonnet, opus
+
+script:
+  words_per_second: 3.2       # tốc độ đọc tiếng Việt để ước lượng độ dài kịch bản
+
 elevenlabs:
   tts_model: eleven_v3        # hoặc eleven_flash_v2_5 (rẻ, nhanh hơn)
   asr_model: scribe_v2

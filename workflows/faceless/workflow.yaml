@@ -1,0 +1,15 @@
+# Video không lộ mặt: Claude viết kịch bản → bạn duyệt → giọng AI đọc
+name: faceless
+description: Video faceless, kịch bản do Claude viết và bạn duyệt trước khi đọc giọng
+steps:
+  - probe
+  - script         # script-review: viết kịch bản, chờ duyệt
+  - voiceover
+  - plan
+  - render
+  - qa
+defaults:
+  captionStyle: tiktok
+  originalVolume: 0
+  overlays_hint: "Nhấn mạnh ý chính, con số, câu hook ở 3 giây đầu. 2 đến 4 chữ highlight."
+  sfx_hint: "Whoosh hoặc pop khi chữ highlight hiện."

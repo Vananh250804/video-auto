@@ -1,0 +1,14 @@
+# Lồng tiếng: bạn đưa sẵn kịch bản thuyết minh → giọng AI đọc → ghép vào video
+name: dubbing
+description: Lồng tiếng theo kịch bản có sẵn, không cần duyệt lại kịch bản
+steps:
+  - probe
+  - voiceover
+  - plan
+  - render
+  - qa
+defaults:
+  captionStyle: tiktok
+  originalVolume: 0.12
+  overlays_hint: "Ít chữ highlight (0 đến 2), chỉ cho con số hoặc ý quan trọng nhất."
+  sfx_hint: "Hạn chế sfx."
