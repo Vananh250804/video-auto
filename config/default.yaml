@@ -1,6 +1,8 @@
 # Cấu hình mặc định. Ghi đè trên máy bằng config/local.yaml (không commit).
+# Key bí mật (API key, token) để trong .env, không để ở đây.
 
 workspace_dir: workspace
+language: vi
 
 cut:
   silence_threshold_db: -35   # âm thanh nhỏ hơn mức này coi là im lặng
@@ -8,7 +10,20 @@ cut:
   padding_sec: 0.12           # chừa lại trước/sau mỗi đoạn nói cho tự nhiên
   min_segment_sec: 0.3        # đoạn giữ lại ngắn hơn thì bỏ
 
+subtitles:
+  max_chars_per_line: 32      # video dọc 9:16 nên để ngắn
+  max_duration_sec: 3.5       # một dòng phụ đề hiện tối đa bao lâu
+  pause_break_sec: 0.45       # người nói ngừng lâu hơn thì sang dòng mới
+
+voiceover:
+  original_volume: 0          # 0 = thay hẳn tiếng gốc; 0.15 = giữ tiếng gốc nhỏ phía sau
+
 providers:
   tts: elevenlabs             # elevenlabs | vbee | saydi
-  asr: whisper                # whisper | elevenlabs
+  asr: elevenlabs             # elevenlabs | whisper
   llm: claude
+
+elevenlabs:
+  tts_model: eleven_v3        # hoặc eleven_flash_v2_5 (rẻ, nhanh hơn)
+  asr_model: scribe_v2
+  voice_id: ""                # để trống thì lấy ELEVENLABS_VOICE_ID trong .env

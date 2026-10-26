@@ -54,6 +54,19 @@ npm run cut -- "video-cua-ban.mp4" --dry-run
 npm run cut -- "video-cua-ban.mp4" --out "workspace/cut.mp4"
 ```
 
+## ElevenLabs (phụ đề + giọng đọc)
+
+1. Đăng ký tại [elevenlabs.io](https://elevenlabs.io), vào **Developers → API Keys**, tạo key, dán vào `.env`: `ELEVENLABS_API_KEY=...`
+2. Vào **Voices**, chọn hoặc thêm một giọng tiếng Việt vào My Voices, bấm **Copy voice ID**, dán vào `.env`: `ELEVENLABS_VOICE_ID=...`
+3. Thử:
+
+```bash
+npm run subtitle -- "video-co-nguoi-noi.mp4"
+npm run voiceover -- "video.mp4" --text "Chào các bạn, đây là giọng đọc thử."
+```
+
+Kết quả nằm trong `workspace/jobs/<tên-video>-<thời-gian>/`.
+
 ## Dùng với Claude Code
 
 Mở Claude Code trong thư mục `video-auto`, nói ví dụ: "cắt khoảng lặng video này: <đường dẫn>". Claude tự đọc skill trong `.claude/skills/` để làm.

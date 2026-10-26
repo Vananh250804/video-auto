@@ -27,6 +27,8 @@ Hệ thống edit video tự động: nhận video thô từ Google Drive qua l�
 npm install
 npm run probe -- <video>              # thông tin + tỉ lệ khung hình
 npm run cut -- <video> --out <file>   # cắt khoảng lặng
+npm run subtitle -- <video>           # phụ đề tiếng Việt (SRT + captions.json)
+npm run voiceover -- <video> --script <file.txt>   # giọng đọc AI + phụ đề
 npm test                              # cần ffmpeg
 npm run typecheck
 ```
@@ -35,5 +37,12 @@ npm run typecheck
 
 - `video-probe`: đọc tỉ lệ, độ dài, xoay
 - `video-cut`: cắt khoảng lặng
+- `vn-subtitle`: phụ đề tiếng Việt từ lời nói
+- `voiceover`: giọng đọc AI theo kịch bản, ghép vào video, phụ đề khớp giọng
 
-Đang làm: `vn-subtitle`, `voiceover`, `script-review`, `edit-planner`, `remotion-render`, `video-qa`.
+Đang làm: `script-review`, `edit-planner`, `remotion-render`, `video-qa`.
+
+## Provider
+
+- Giao diện chung: `core/contracts/providers.ts`. Thêm provider: viết class trong `integrations/<loại>/<tên>/`, đăng ký trong `integrations/registry.ts`.
+- Hiện có: ElevenLabs (TTS + ASR). Vbee, Saydi, Whisper chờ thêm.
