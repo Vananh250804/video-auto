@@ -1,0 +1,12 @@
+{
+  "fontFamily": "Be Vietnam Pro",
+  "fontWeight": 800,
+  "fontScale": 0.068,
+  "color": "rgba(255, 255, 255, 0.55)",
+  "activeColor": "#FFFFFF",
+  "strokeColor": "#000000",
+  "strokeWidth": 0.1,
+  "background": null,
+  "uppercase": false,
+  "popIn": false
+}

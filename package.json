@@ -12,16 +12,26 @@
     "cut": "tsx .claude/skills/video-cut/scripts/cut.ts",
     "subtitle": "tsx .claude/skills/vn-subtitle/scripts/subtitle.ts",
     "voiceover": "tsx .claude/skills/voiceover/scripts/voiceover.ts",
+    "render": "tsx .claude/skills/remotion-render/scripts/render.ts",
+    "studio": "remotion studio",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/unit/*.test.ts tests/integration/*.test.ts",
     "test:unit": "tsx --test tests/unit/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/react": "^19.3.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
   },
   "dependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.539",
     "yaml": "^2.9.1"
   }
 }

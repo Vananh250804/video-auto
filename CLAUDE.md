@@ -29,6 +29,8 @@ npm run probe -- <video>              # thông tin + tỉ lệ khung hình
 npm run cut -- <video> --out <file>   # cắt khoảng lặng
 npm run subtitle -- <video>           # phụ đề tiếng Việt (SRT + captions.json)
 npm run voiceover -- <video> --script <file.txt>   # giọng đọc AI + phụ đề
+npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
+npm run studio                        # xem template Remotion
 npm test                              # cần ffmpeg
 npm run typecheck
 ```
@@ -39,8 +41,15 @@ npm run typecheck
 - `video-cut`: cắt khoảng lặng
 - `vn-subtitle`: phụ đề tiếng Việt từ lời nói
 - `voiceover`: giọng đọc AI theo kịch bản, ghép vào video, phụ đề khớp giọng
+- `remotion-render`: render từ `edit.json` (phụ đề kiểu TikTok, chữ highlight, sfx, nhạc)
 
-Đang làm: `script-review`, `edit-planner`, `remotion-render`, `video-qa`.
+Đang làm: `script-review`, `edit-planner`, `video-qa`.
+
+## Render
+
+- `edit.json` là đầu vào duy nhất của render (schema `schemas/edit.schema.json`, kiểm tra trong `core/render/edit-spec.ts`). `edit-planner` sẽ sinh file này.
+- Remotion: `renderers/remotion/`. Font Be Vietnam Pro nằm sẵn trong `assets/fonts/`, không tải từ mạng.
+- Tất cả package `remotion` và `@remotion/*` phải cùng một phiên bản, ghi chính xác (không có `^`).
 
 ## Provider
 

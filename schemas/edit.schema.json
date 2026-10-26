@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edit.schema.json",
+  "title": "edit.json",
+  "description": "Mô tả một lần render bằng remotion-render. Đường dẫn tương đối tính từ thư mục gốc project. Kiểm tra trong code: core/render/edit-spec.ts.",
+  "type": "object",
+  "required": ["video"],
+  "additionalProperties": false,
+  "properties": {
+    "video": { "type": "string", "description": "Video nền (đã cắt / đã ghép giọng)" },
+    "captions": { "type": "string", "description": "captions.json từ vn-subtitle hoặc voiceover" },
+    "captionStyle": { "type": "string", "pattern": "^[a-z0-9-]+$", "default": "tiktok", "description": "Tên preset trong presets/captions/ (tiktok, box, karaoke) hoặc none" },
+    "originalVolume": { "type": "number", "minimum": 0, "maximum": 2, "default": 1 },
+    "maxShortSide": { "type": "number", "minimum": 240, "maximum": 4320, "default": 1080 },
+    "overlays": {
+      "type": "array",
+      "description": "Chữ highlight nổi lên (pop)",
+      "items": {
+        "type": "object",
+        "required": ["text", "start", "end"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" },
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "minimum": 0 },
+          "position": { "enum": ["top", "center", "bottom"], "default": "top" },
+          "color": { "type": "string", "default": "#FFFFFF" },
+          "background": { "type": "string", "default": "#FF2D55" }
+        }
+      }
+    },
+    "sfx": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string" },
+          "at": { "type": "number", "minimum": 0 },
+          "volume": { "type": "number", "minimum": 0, "maximum": 2, "default": 1 }
+        }
+      }
+    },
+    "music": {
+      "type": "object",
+      "required": ["file"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "volume": { "type": "number", "minimum": 0, "maximum": 2, "default": 0.15 }
+      }
+    }
+  }
+}
