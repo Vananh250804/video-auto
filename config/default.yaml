@@ -1,0 +1,14 @@
+# Cấu hình mặc định. Ghi đè trên máy bằng config/local.yaml (không commit).
+
+workspace_dir: workspace
+
+cut:
+  silence_threshold_db: -35   # âm thanh nhỏ hơn mức này coi là im lặng
+  min_silence_sec: 0.6        # khoảng lặng ngắn hơn thì giữ lại
+  padding_sec: 0.12           # chừa lại trước/sau mỗi đoạn nói cho tự nhiên
+  min_segment_sec: 0.3        # đoạn giữ lại ngắn hơn thì bỏ
+
+providers:
+  tts: elevenlabs             # elevenlabs | vbee | saydi
+  asr: whisper                # whisper | elevenlabs
+  llm: claude
