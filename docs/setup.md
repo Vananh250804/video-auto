@@ -67,6 +67,18 @@ npm run voiceover -- "video.mp4" --text "Chào các bạn, đây là giọng đ�
 
 Kết quả nằm trong `workspace/jobs/<tên-video>-<thời-gian>/`.
 
+## Render thành phẩm (Remotion)
+
+![Mẫu phụ đề tiktok + chữ highlight](images/render-mau-tiktok.png)
+
+```bash
+npm run render -- --video "video.mp4" --captions "workspace/jobs/<id>/captions.json" --style tiktok --out "workspace/final.mp4"
+```
+
+- Lần đầu Remotion tự tải Chrome Headless Shell (khoảng 100 MB).
+- `npm run studio` mở trình duyệt để xem và chỉnh giao diện phụ đề, chữ highlight.
+- Giấy phép Remotion: miễn phí cho cá nhân và công ty tối đa 3 người. Đông hơn cần mua license tại remotion.pro.
+
 ## Dùng với Claude Code
 
 Mở Claude Code trong thư mục `video-auto`, nói ví dụ: "cắt khoảng lặng video này: <đường dẫn>". Claude tự đọc skill trong `.claude/skills/` để làm.
