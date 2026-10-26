@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
 import { loadConfig } from "../config/index.ts";
-import type { AsrProvider, LlmProvider, StorageProvider, TtsProvider } from "../contracts/providers.ts";
+import type { AsrProvider, LlmProvider, StorageProvider, StoredFile, TtsProvider } from "../contracts/providers.ts";
 import { cutSilences } from "../media/cut.ts";
 import { probe } from "../media/probe.ts";
 import { planEdit } from "../planner/edit-planner.ts";
@@ -29,6 +29,8 @@ export interface RunnerDeps {
   tts: () => TtsProvider;
   asr: () => AsrProvider;
   storage?: StorageProvider; // không có thì lấy file local, không upload
+  // Nguồn "telegram:<file_id>:<tên>" (video gửi thẳng vào bot) tải bằng hàm này
+  telegramFile?: (fileId: string, destDir: string, name: string) => Promise<StoredFile>;
   render?: typeof renderEdit; // cho test thay bằng bản giả
   notify: (job: JobState, event: JobEvent) => Promise<void> | void;
 }
@@ -45,7 +47,11 @@ type Step = (ctx: Ctx) => Promise<string | void>; // trả về ghi chú nếu c
 
 const STEPS: Record<string, Step> = {
   async download({ dir, job, deps }) {
-    const file = deps.storage
+    const tg = job.source.match(/^telegram:([^:]+):(.+)$/);
+    if (tg && !deps.telegramFile) throw new Error("Video gửi qua Telegram chỉ chạy được từ bot.");
+    const file = tg
+      ? await deps.telegramFile!(tg[1], join(dir, "input"), tg[2])
+      : deps.storage
       ? await deps.storage.download(job.source, join(dir, "input"))
       : await copyLocal(job.source, join(dir, "input"));
     job.artifacts.input = file.path;

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
@@ -8,7 +8,8 @@ import { reviseScript } from "../core/planner/script-writer.ts";
 import { SerialQueue } from "../core/queue/queue.ts";
 import { setStatus } from "../core/review/review-state.ts";
 import type { ScriptCheck } from "../core/review/script-checks.ts";
-import type { TelegramApi, TgButton, TgUpdate } from "../integrations/delivery/telegram/index.ts";
+import { MAX_DOWNLOAD_BYTES, MAX_UPLOAD_BYTES, type TelegramApi, type TgButton, type TgFile, type TgUpdate } from "../integrations/delivery/telegram/index.ts";
+import { safeFileName } from "../integrations/storage/google-drive/index.ts";
 import { HELP, parseCommand, type Command } from "./commands.ts";
 
 const STEP_LABEL: Record<string, string> = {
@@ -33,6 +34,23 @@ export function newJobId(now = new Date()): string {
 function scriptMessage(script: string, check: ScriptCheck): string {
   const issues = check.issues.length ? `\n\n⚠️ Lưu ý:\n${check.issues.map((i) => `• ${i.message}`).join("\n")}` : "";
   return `📝 Kịch bản (khoảng ${check.estimatedSec}s, ${check.words} từ):\n\n${script}${issues}`;
+}
+
+// Video gửi thẳng (dạng video hoặc dạng file)
+function attachedVideo(m: TgUpdate["message"]): TgFile | undefined {
+  if (m?.video) return m.video;
+  if (m?.document?.mime_type?.startsWith("video/")) return m.document;
+  return undefined;
+}
+
+// Lệnh kèm video gửi thẳng: lấy video đó làm nguồn, bỏ qua link Drive nếu có
+export function withVideo(cmd: Command, video: TgFile | undefined): Command {
+  if (!video || cmd.kind !== "job") return cmd;
+  if ((video.file_size ?? 0) > MAX_DOWNLOAD_BYTES) {
+    throw new Error(`Video ${Math.round((video.file_size ?? 0) / 1024 / 1024)} MB, Telegram chỉ cho bot tải tối đa 20 MB. Up lên Drive rồi gửi lệnh kèm link.`);
+  }
+  const name = safeFileName(video.file_name || `telegram-${Date.now()}.mp4`);
+  return { ...cmd, source: `telegram:${video.file_id}:${name}` };
 }
 
 export class VideoBot {
@@ -70,6 +88,10 @@ export class VideoBot {
         await this.send(job.chatId, scriptMessage(event.script, event.check), this.approvalButtons(job.id));
         break;
       case "done": {
+        // Video vừa đủ nhỏ thì gửi thẳng vào Telegram để xem ngay trên điện thoại
+        if (job.chatId !== undefined && existsSync(event.final) && statSync(event.final).size <= MAX_UPLOAD_BYTES) {
+          await this.deps.tg.sendVideo(job.chatId, event.final, `🎬 Job ${job.id}`).catch((err) => console.error(`Không gửi được video: ${err.message}`));
+        }
         const notes = job.steps.filter((s) => s.note).map((s) => `• ${STEP_LABEL[s.name] ?? s.name}: ${s.note}`);
         const qa = event.qa?.issues.length ? `\n\n🔎 Kiểm tra:\n${event.qa.issues.map((i) => `• ${i.message}`).join("\n")}` : "";
         await this.send(job.chatId, `✅ Xong job ${job.id}\n${event.url ?? event.final}${notes.length ? `\n\n${notes.join("\n")}` : ""}${qa}`);
@@ -83,8 +105,15 @@ export class VideoBot {
     }
   };
 
+  private telegramFile = async (fileId: string, destDir: string, name: string) => {
+    const path = join(destDir, name);
+    await mkdir(destDir, { recursive: true });
+    await this.deps.tg.downloadFile(fileId, path);
+    return { path, name };
+  };
+
   enqueue(dir: string): Promise<JobState> {
-    return this.queue.push(() => this.run(dir, { ...this.deps.runnerDeps, notify: this.notify }));
+    return this.queue.push(() => this.run(dir, { ...this.deps.runnerDeps, telegramFile: this.telegramFile, notify: this.notify }));
   }
 
   // Bot tắt giữa chừng thì job đang chạy được chạy tiếp khi bật lại
@@ -111,14 +140,18 @@ export class VideoBot {
     }
     try {
       if (u.callback_query) return await this.onButton(chatId, u.callback_query);
-      const text = u.message?.text?.trim();
-      if (!text) return;
+      const video = attachedVideo(u.message);
+      const text = (u.message?.text ?? u.message?.caption)?.trim();
+      if (!text) {
+        if (video) await this.send(chatId, "Đã nhận video. Gửi lại kèm lệnh ở phần chú thích, ví dụ: /ads làm nổi giá và chữ freeship");
+        return;
+      }
       const waiting = this.awaitingFeedback.get(chatId);
       if (waiting && !text.startsWith("/")) {
         this.awaitingFeedback.delete(chatId);
         return await this.onFeedback(chatId, waiting, text);
       }
-      await this.onCommand(chatId, parseCommand(text));
+      await this.onCommand(chatId, withVideo(parseCommand(text), video));
     } catch (err) {
       await this.send(chatId, `❌ ${(err as Error).message}`);
     }

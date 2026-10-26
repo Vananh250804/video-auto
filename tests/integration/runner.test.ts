@@ -125,3 +125,26 @@ test("dubbing thiếu kịch bản thì báo lỗi rõ", async () => {
   assert.equal(job.status, "failed");
   assert.match(job.error!, /Thiếu kịch bản/);
 });
+
+test("nguồn telegram: tải bằng telegramFile, chạy ngoài bot thì báo lỗi", async () => {
+  const dir = await newJob("tg1", { workflow: "shop-ads", source: "telegram:FILE9:clip.mp4" });
+  const got: string[] = [];
+  const { deps: d } = deps({
+    telegramFile: async (id: string, destDir: string, name: string) => {
+      got.push(id);
+      await mkdir(destDir, { recursive: true });
+      const path = join(destDir, name);
+      await copyFile(talking, path);
+      return { path, name };
+    },
+  });
+  const job = await runJob(dir, d);
+  assert.equal(job.status, "done", job.error);
+  assert.deepEqual(got, ["FILE9"]);
+  assert.match(job.artifacts.input!, /clip\.mp4$/);
+
+  const dir2 = await newJob("tg2", { workflow: "shop-ads", source: "telegram:FILE9:clip.mp4" });
+  const failed = await runJob(dir2, deps().deps);
+  assert.equal(failed.status, "failed");
+  assert.match(failed.error!, /chỉ chạy được từ bot/);
+});
