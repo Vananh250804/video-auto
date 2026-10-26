@@ -33,6 +33,10 @@ npm run script -- write --brief "..." --seconds 30   # Claude viết kịch bả
 npm run plan -- <video> --captions <captions.json> --workflow shop-ads --request "..." --out <edit.json>
 npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
 npm run studio                        # xem template Remotion
+npm run qa -- <video>                 # kiểm tra video cuối
+npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
+npm run bot                           # bật bot Telegram
+npm run drive:auth                    # đăng nhập Google Drive một lần
 npm test                              # cần ffmpeg
 npm run typecheck
 ```
@@ -47,7 +51,14 @@ npm run typecheck
 - `edit-planner`: yêu cầu tự do → `edit.json` (Claude qua `claude -p`)
 - `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
 
-Đang làm: `video-qa`, bot Telegram + Google Drive.
+- `video-qa`: kiểm tra khung đen, đứng hình, mất tiếng, âm lượng, độ dài
+
+## Luồng tự động
+
+- `bot/`: Telegram (`/ads`, `/faceless`, `/dub`, `/status`, `/retry`, nút duyệt kịch bản). Chỉ chat trong `TELEGRAM_ALLOWED_CHAT_IDS` được dùng.
+- `core/jobs/runner.ts`: chạy các bước `download → <steps của workflow> → upload`, lưu `workspace/jobs/<id>/job.json` sau mỗi bước. Chạy lại thì tiếp từ bước chưa xong. Bước `script` dừng job ở `waiting_approval` tới khi kịch bản được duyệt.
+- `core/queue/`: chạy từng job một.
+- Storage: `google-drive` (REST API qua fetch, OAuth refresh token) hoặc `local` (`workspace/inbox` → `workspace/outbox`).
 
 ## Render
 

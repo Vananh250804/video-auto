@@ -22,9 +22,13 @@ providers:
   tts: elevenlabs             # elevenlabs | vbee | saydi
   asr: elevenlabs             # elevenlabs | whisper
   llm: claude
+  storage: google-drive       # google-drive | local (thư mục workspace/inbox → workspace/outbox)
 
 claude:
   model: ""                   # để trống = model mặc định của tài khoản; hoặc sonnet, opus
+
+plan:
+  auto_highlight: true        # không có yêu cầu riêng vẫn nhờ Claude chọn chữ highlight; false = chỉ phụ đề, không gọi Claude
 
 script:
   words_per_second: 3.2       # tốc độ đọc tiếng Việt để ước lượng độ dài kịch bản

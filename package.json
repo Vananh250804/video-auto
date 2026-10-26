@@ -16,6 +16,10 @@
     "plan": "tsx .claude/skills/edit-planner/scripts/plan.ts",
     "render": "tsx .claude/skills/remotion-render/scripts/render.ts",
     "studio": "remotion studio",
+    "qa": "tsx .claude/skills/video-qa/scripts/qa.ts",
+    "job": "tsx bot/run-job.ts",
+    "bot": "tsx bot/index.ts",
+    "drive:auth": "tsx bot/drive-auth.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/unit/*.test.ts tests/integration/*.test.ts",
     "test:unit": "tsx --test tests/unit/*.test.ts"
