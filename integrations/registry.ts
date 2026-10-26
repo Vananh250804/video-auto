@@ -1,5 +1,6 @@
 import { loadConfig } from "../core/config/index.ts";
-import type { AsrProvider, TtsProvider } from "../core/contracts/providers.ts";
+import type { AsrProvider, LlmProvider, TtsProvider } from "../core/contracts/providers.ts";
+import { ClaudeCli } from "./llm/claude/index.ts";
 import { ElevenLabsAsr } from "./asr/elevenlabs/index.ts";
 import { ElevenLabsTts } from "./tts/elevenlabs/index.ts";
 
@@ -23,5 +24,16 @@ export function getTts(name?: string): TtsProvider {
       return new ElevenLabsTts({ model: cfg.elevenlabs.tts_model, voiceId: cfg.elevenlabs.voice_id });
     default:
       throw new Error(`TTS "${pick}" chưa được hỗ trợ. Hiện có: elevenlabs. Vbee, Saydi cần tài liệu API và key.`);
+  }
+}
+
+export function getLlm(name?: string): LlmProvider {
+  const cfg = loadConfig();
+  const pick = name || cfg.providers.llm;
+  switch (pick) {
+    case "claude":
+      return new ClaudeCli({ model: cfg.claude?.model || undefined });
+    default:
+      throw new Error(`LLM "${pick}" chưa được hỗ trợ. Hiện có: claude.`);
   }
 }

@@ -29,6 +29,8 @@ npm run probe -- <video>              # thông tin + tỉ lệ khung hình
 npm run cut -- <video> --out <file>   # cắt khoảng lặng
 npm run subtitle -- <video>           # phụ đề tiếng Việt (SRT + captions.json)
 npm run voiceover -- <video> --script <file.txt>   # giọng đọc AI + phụ đề
+npm run script -- write --brief "..." --seconds 30   # Claude viết kịch bản, chờ duyệt
+npm run plan -- <video> --captions <captions.json> --workflow shop-ads --request "..." --out <edit.json>
 npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
 npm run studio                        # xem template Remotion
 npm test                              # cần ffmpeg
@@ -42,8 +44,10 @@ npm run typecheck
 - `vn-subtitle`: phụ đề tiếng Việt từ lời nói
 - `voiceover`: giọng đọc AI theo kịch bản, ghép vào video, phụ đề khớp giọng
 - `remotion-render`: render từ `edit.json` (phụ đề kiểu TikTok, chữ highlight, sfx, nhạc)
+- `edit-planner`: yêu cầu tự do → `edit.json` (Claude qua `claude -p`)
+- `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
 
-Đang làm: `script-review`, `edit-planner`, `video-qa`.
+Đang làm: `video-qa`, bot Telegram + Google Drive.
 
 ## Render
 
@@ -54,4 +58,5 @@ npm run typecheck
 ## Provider
 
 - Giao diện chung: `core/contracts/providers.ts`. Thêm provider: viết class trong `integrations/<loại>/<tên>/`, đăng ký trong `integrations/registry.ts`.
-- Hiện có: ElevenLabs (TTS + ASR). Vbee, Saydi, Whisper chờ thêm.
+- Hiện có: ElevenLabs (TTS + ASR), Claude (LLM, qua lệnh `claude -p`, chạy trong thư mục tạm để không nạp CLAUDE.md này). Vbee, Saydi, Whisper chờ thêm.
+- Prompt gọi Claude tự động nằm trong `prompts/`. Claude phải trả JSON; code tự làm sạch, kiểm tra và hỏi lại 1 lần nếu sai.

@@ -1,0 +1,15 @@
+# Quảng cáo shop / giỏ hàng quay một shot, có người nói hoặc chỉ có hình + nhạc
+name: shop-ads
+description: Video quảng cáo sản phẩm quay thật, phụ đề theo lời nói, chữ highlight giá và ưu đãi
+steps:
+  - probe
+  - cut            # bỏ qua nếu video không có tiếng nói
+  - subtitle
+  - plan           # edit-planner: yêu cầu của bạn (hoặc mặc định) → edit.json
+  - render
+  - qa
+defaults:
+  captionStyle: tiktok
+  originalVolume: 1
+  overlays_hint: "Làm nổi bật giá, % giảm, quà tặng, freeship, lời kêu gọi mua (bấm giỏ hàng). 2 đến 4 chữ highlight."
+  sfx_hint: "Tiếng pop khi chữ highlight hiện."

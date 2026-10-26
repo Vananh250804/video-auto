@@ -79,6 +79,20 @@ npm run render -- --video "video.mp4" --captions "workspace/jobs/<id>/captions.j
 - `npm run studio` mở trình duyệt để xem và chỉnh giao diện phụ đề, chữ highlight.
 - Giấy phép Remotion: miễn phí cho cá nhân và công ty tối đa 3 người. Đông hơn cần mua license tại remotion.pro.
 
+## Claude tự động (kịch bản, hiểu yêu cầu)
+
+Bot gọi lệnh `claude -p` trên máy, dùng tài khoản Claude bạn đã đăng nhập, không cần API key.
+
+1. Cài Claude Code: xem [hướng dẫn chính thức](https://code.claude.com/docs/en/setup)
+2. Mở terminal, gõ `claude`, đăng nhập một lần
+3. Thử:
+
+```bash
+npm run script -- write --brief "Túi da nữ màu kem, giá 299 nghìn, freeship" --seconds 25
+```
+
+Mỗi lần gọi tính vào hạn mức tài khoản Claude của bạn. Nếu không tìm thấy lệnh `claude`, điền đường dẫn vào `.env`: `CLAUDE_PATH=...`
+
 ## Dùng với Claude Code
 
 Mở Claude Code trong thư mục `video-auto`, nói ví dụ: "cắt khoảng lặng video này: <đường dẫn>". Claude tự đọc skill trong `.claude/skills/` để làm.

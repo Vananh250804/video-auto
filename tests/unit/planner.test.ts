@@ -1,0 +1,69 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { extractJson, fillTemplate } from "../../core/planner/json.ts";
+import { sanitizePlan } from "../../core/planner/edit-planner.ts";
+import { loadWorkflow, listWorkflows } from "../../core/planner/workflows.ts";
+import { checkScript, countWords } from "../../core/review/script-checks.ts";
+
+const ctx = {
+  duration: 10,
+  captionStyles: ["tiktok", "box", "karaoke"],
+  sfxFiles: ["assets/sfx/pop.mp3"],
+  musicFiles: ["assets/music/vui.mp3"],
+  defaults: { captionStyle: "tiktok", originalVolume: 1 },
+};
+
+test("extractJson đọc được JSON có lời dẫn và ```json", () => {
+  assert.deepEqual(extractJson('Đây là kế hoạch:\n```json\n{"a": 1}\n```'), { a: 1 });
+  assert.deepEqual(extractJson('ok {"a": {"b": 2}} xong'), { a: { b: 2 } });
+  assert.throws(() => extractJson("không có gì"), /Không tìm thấy JSON/);
+});
+
+test("fillTemplate thay biến", () => {
+  assert.equal(fillTemplate("Xin {{name}}, {{missing}}!", { name: "chào" }), "Xin chào, !");
+});
+
+test("sanitizePlan kẹp thời gian, bỏ file và preset lạ", () => {
+  const { plan, dropped } = sanitizePlan({
+    captionStyle: "neon",
+    originalVolume: 3,
+    overlays: [
+      { text: "SALE 50%", start: 1, end: 3, position: "left" },
+      { text: "Cuối", start: 9, end: 15 },
+      { text: "Sai", start: 5, end: 4 },
+    ],
+    sfx: [{ file: "assets/sfx/pop.mp3", at: 1 }, { file: "C:/Windows/a.wav", at: 2 }],
+    music: { file: "assets/music/vui.mp3", volume: 0.9 },
+  }, ctx);
+  assert.equal(plan.captionStyle, "tiktok");
+  assert.equal(plan.originalVolume, 1);
+  assert.deepEqual(plan.overlays, [
+    { text: "SALE 50%", start: 1, end: 3, position: "top" },
+    { text: "Cuối", start: 9, end: 10, position: "top" },
+  ]);
+  assert.deepEqual(plan.sfx, [{ file: "assets/sfx/pop.mp3", at: 1, volume: 1 }]);
+  assert.deepEqual(plan.music, { file: "assets/music/vui.mp3", volume: 0.4 });
+  assert.equal(dropped.length, 3);
+});
+
+test("workflow mặc định có đủ 3 loại", () => {
+  assert.deepEqual(listWorkflows().sort(), ["dubbing", "faceless", "shop-ads"]);
+  assert.ok(loadWorkflow("faceless").steps.includes("script"));
+  assert.throws(() => loadWorkflow("../x"), /không hợp lệ/);
+});
+
+test("checkScript ước lượng độ dài và bắt lỗi số tiền, từ cấm", () => {
+  const text = "Túi xách tốt nhất thị trường, giá chỉ 299k. Còn bản cao cấp 1tr thôi!";
+  const r = checkScript(text, { targetSec: 30, wordsPerSecond: 3.2 });
+  assert.equal(r.words, countWords(text));
+  const msgs = r.issues.map((i) => i.message).join("\n");
+  assert.match(msgs, /"299k" nên viết "299 nghìn"/);
+  assert.match(msgs, /"1tr" nên viết "1 triệu"/);
+  assert.match(msgs, /tốt nhất/);
+  assert.ok(r.issues.some((i) => i.type === "length"));
+});
+
+test("checkScript không báo nhầm từ thường", () => {
+  const r = checkScript("Sản phẩm có giá trị sử dụng lâu dài, mình rất thích.", { wordsPerSecond: 3.2 });
+  assert.deepEqual(r.issues, []);
+});

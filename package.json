@@ -12,6 +12,8 @@
     "cut": "tsx .claude/skills/video-cut/scripts/cut.ts",
     "subtitle": "tsx .claude/skills/vn-subtitle/scripts/subtitle.ts",
     "voiceover": "tsx .claude/skills/voiceover/scripts/voiceover.ts",
+    "script": "tsx .claude/skills/script-review/scripts/script.ts",
+    "plan": "tsx .claude/skills/edit-planner/scripts/plan.ts",
     "render": "tsx .claude/skills/remotion-render/scripts/render.ts",
     "studio": "remotion studio",
     "typecheck": "tsc --noEmit",

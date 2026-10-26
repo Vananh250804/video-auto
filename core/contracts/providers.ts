@@ -34,3 +34,9 @@ export interface TtsProvider {
   readonly name: string;
   synthesize(text: string, outFile: string, opts: TtsOptions): Promise<TtsResult>;
 }
+
+export interface LlmProvider {
+  readonly name: string;
+  // Gửi một prompt, nhận lại văn bản trả lời
+  complete(prompt: string): Promise<string>;
+}

@@ -24,6 +24,12 @@ export interface AppConfig {
     asr: string;
     llm: string;
   };
+  claude: {
+    model: string;
+  };
+  script: {
+    words_per_second: number;
+  };
   elevenlabs: {
     tts_model: string;
     asr_model: string;
