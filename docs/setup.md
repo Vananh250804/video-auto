@@ -107,9 +107,21 @@ Hai cách gửi video:
 
 Video đã edit dưới 50 MB được bot gửi thẳng về chat, kèm link Drive. Đây là giới hạn của Telegram cho bot.
 
-Bot chạy trên máy bạn, nên máy phải bật và không ngủ:
-- macOS: `caffeinate -i npm run bot`
-- Windows: Settings → System → Power → Sleep: Never (khi cắm sạc)
+### Cho bot tự chạy nền
+
+Test ổn với `npm run bot` rồi thì tắt nó (Ctrl+C) và cài chạy nền, để bot tự bật mỗi khi đăng nhập máy và tự chạy lại nếu bị tắt:
+
+```bash
+npm run bot:install     # cài và bật luôn
+npm run bot:status      # xem bot có đang chạy không
+npm run bot:uninstall   # gỡ
+```
+
+- Nhật ký bot ghi vào `workspace/logs/bot.log`. Bot im lặng thì mở file này xem lỗi.
+- Sau khi `git pull` code mới hoặc sửa `.env`: chạy lại `npm run bot:install` để bot nạp bản mới.
+- Đã cài chạy nền thì không chạy thêm `npm run bot`, vì Telegram chỉ cho một nơi nhận tin của bot.
+- Máy phải bật và không ngủ. macOS: bot tự giữ máy thức khi đang chạy (vẫn ngủ khi gập máy). Windows: Settings → System → Power → Sleep: Never (khi cắm sạc).
+- Cài đặt nhớ đường dẫn của `ffmpeg` và `claude` lúc bạn chạy lệnh, nên chạy `bot:install` từ Terminal mà `npm run bot` đã chạy được.
 
 ## Google Drive
 
