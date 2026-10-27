@@ -15,6 +15,34 @@ export interface DriveConfig {
   refreshToken: string;
   inputFolderId?: string;
   outputFolderId?: string;
+  retryDelaysMs?: number[]; // chờ giữa các lần thử lại khi mất mạng
+}
+
+const RETRY_DELAYS_MS = [3_000, 10_000, 30_000];
+
+// fetch báo "fetch failed" khi mất kết nối, lý do thật nằm trong err.cause
+function networkCause(err: unknown): string | null {
+  const e = err as { name?: string; message?: string; cause?: { code?: string; message?: string } };
+  if (e?.name === "TimeoutError") return "hết thời gian chờ";
+  if (e?.name === "TypeError" && /fetch failed/i.test(e.message ?? "")) return e.cause?.code ?? e.cause?.message ?? "fetch failed";
+  return null;
+}
+
+// Mạng chập chờn thì thử lại cả thao tác từ đầu; lỗi Drive trả về (403, 404...) thì báo luôn
+export async function retryOnNetworkError<T>(fn: () => Promise<T>, delays = RETRY_DELAYS_MS): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const cause = networkCause(err);
+      if (!cause) throw err;
+      if (attempt >= delays.length) {
+        throw new Error(`Mất kết nối tới Google Drive sau ${attempt + 1} lần thử (${cause}). Kiểm tra mạng rồi gửi /retry.`);
+      }
+      console.warn(`Google Drive mất kết nối (${cause}), thử lại sau ${delays[attempt] / 1000}s...`);
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+  }
 }
 
 // Lấy id từ link Drive: /file/d/<id>, /folders/<id>, ?id=<id>, hoặc id trần
@@ -77,6 +105,10 @@ export class GoogleDriveStorage implements StorageProvider {
   }
 
   async download(ref: string, destDir: string): Promise<StoredFile> {
+    return retryOnNetworkError(() => this.downloadOnce(ref, destDir), this.cfg.retryDelaysMs);
+  }
+
+  private async downloadOnce(ref: string, destDir: string): Promise<StoredFile> {
     const id = parseDriveRef(ref) ?? this.cfg.inputFolderId;
     if (!id) throw new Error("Chưa có link video, và chưa đặt GOOGLE_DRIVE_INPUT_FOLDER_ID trong .env.");
     let file = await this.meta(id);
@@ -91,6 +123,10 @@ export class GoogleDriveStorage implements StorageProvider {
   }
 
   async upload(file: string, name: string): Promise<{ url: string }> {
+    return retryOnNetworkError(() => this.uploadOnce(file, name), this.cfg.retryDelaysMs);
+  }
+
+  private async uploadOnce(file: string, name: string): Promise<{ url: string }> {
     const { size } = await stat(file);
     // Upload kiểu resumable: hỏi chỗ upload trước, rồi gửi nội dung file
     const init = await this.api(`${UPLOAD}/files?uploadType=resumable&supportsAllDrives=true&fields=id,webViewLink`, {
