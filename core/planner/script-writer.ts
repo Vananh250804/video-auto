@@ -4,6 +4,7 @@ import { loadConfig, projectRoot } from "../config/index.ts";
 import type { LlmProvider } from "../contracts/providers.ts";
 import { checkScript } from "../review/script-checks.ts";
 import { readReview, saveReview, type ReviewState } from "../review/review-state.ts";
+import { lessonsForPrompt } from "../knowledge/lessons.ts";
 import { extractJson, fillTemplate } from "./json.ts";
 
 async function generate(llm: LlmProvider, values: Record<string, string>): Promise<{ script: string; notes: string }> {
@@ -23,9 +24,10 @@ async function generate(llm: LlmProvider, values: Record<string, string>): Promi
   throw new Error(`Claude không trả kịch bản hợp lệ: ${last}`);
 }
 
-function values(brief: string, workflow: string, targetSec: number | undefined, previous = "") {
+async function values(brief: string, workflow: string, targetSec: number | undefined, style?: string, previous = "") {
   const wps = loadConfig().script.words_per_second;
   return {
+    lessons: await lessonsForPrompt("script", { workflow, style }),
     workflow,
     brief,
     target: targetSec ? `${targetSec} giây` : "tự chọn, 20 đến 45 giây",
@@ -35,8 +37,8 @@ function values(brief: string, workflow: string, targetSec: number | undefined, 
 }
 
 // Viết kịch bản mới, lưu review.json trạng thái "pending" chờ người dùng duyệt
-export async function writeScript(opts: { dir: string; brief: string; workflow: string; targetSec?: number; llm: LlmProvider }) {
-  const { script, notes } = await generate(opts.llm, values(opts.brief, opts.workflow, opts.targetSec));
+export async function writeScript(opts: { dir: string; brief: string; workflow: string; targetSec?: number; style?: string; llm: LlmProvider }) {
+  const { script, notes } = await generate(opts.llm, await values(opts.brief, opts.workflow, opts.targetSec, opts.style));
   const state: ReviewState = {
     status: "pending",
     brief: opts.brief,
@@ -50,10 +52,10 @@ export async function writeScript(opts: { dir: string; brief: string; workflow: 
 }
 
 // Viết lại theo góp ý của người dùng, trạng thái quay về "pending"
-export async function reviseScript(opts: { dir: string; feedback: string; workflow: string; llm: LlmProvider }) {
+export async function reviseScript(opts: { dir: string; feedback: string; workflow: string; style?: string; llm: LlmProvider }) {
   const state = await readReview(opts.dir);
   const previous = `\n## Bản trước (người dùng chưa duyệt)\n${state.script}\n\n## Góp ý của người dùng, phải làm theo\n${opts.feedback}`;
-  const { script, notes } = await generate(opts.llm, values(state.brief, opts.workflow, state.targetSec, previous));
+  const { script, notes } = await generate(opts.llm, await values(state.brief, opts.workflow, state.targetSec, opts.style, previous));
   state.script = script;
   state.status = "pending";
   state.check = checkScript(script, { targetSec: state.targetSec, wordsPerSecond: loadConfig().script.words_per_second });

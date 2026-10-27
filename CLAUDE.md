@@ -2,12 +2,17 @@
 
 Hệ thống edit video tự động: nhận video thô từ Google Drive qua lệnh Telegram, cắt, thêm phụ đề tiếng Việt, giọng đọc AI, hiệu ứng chữ, render bằng FFmpeg + Remotion, trả kết quả lên Drive.
 
+## Bắt đầu phiên
+
+Hook `SessionStart` chạy `node scripts/doctor.mjs --hook`. Nếu báo máy chưa cài đủ, dùng skill `setup-guide` hướng dẫn người dùng từng bước trước khi làm việc khác.
+
 ## Quy tắc làm việc
 
 - Trả lời bằng tiếng Việt, ngắn gọn, đúng trọng tâm.
 - Thiếu thông tin thì hỏi, không tự suy diễn.
 - Trước khi làm việc lớn, đưa kế hoạch 3 đến 5 bước để người dùng duyệt.
 - Không bao giờ sửa hoặc ghi đè video gốc. File tạm và kết quả nằm trong `workspace/jobs/<id>/`.
+- Người dùng sửa, chê hay góp ý kết quả: làm theo, rồi rút thành quy tắc chung và lưu bằng `npm run lessons -- add` (skill `lessons`) để không lặp lại. Trước khi viết kịch bản hay lên hiệu ứng, đọc `knowledge/lessons.json`.
 - Code phải chạy được trên cả Windows và macOS: dùng `node:path`, gọi FFmpeg bằng `spawn` với mảng tham số (không ghép chuỗi lệnh shell).
 
 ## Cấu trúc
@@ -18,6 +23,8 @@ Hệ thống edit video tự động: nhận video thô từ Google Drive qua l�
 - `workflows/`: thứ tự các bước cho từng loại video (shop-ads, faceless, dubbing).
 - `renderers/remotion/`: template theo tỉ lệ 9:16, 16:9, 1:1.
 - `presets/`, `assets/`, `schemas/`, `prompts/` (chỉ cho lời gọi API trực tiếp).
+- `knowledge/`: bài học (có commit): `lessons.json` quy tắc từ góp ý, `known-errors.json` lỗi đã gặp và cách sửa, `styles/` phong cách học từ video mẫu. Code: `core/knowledge/`.
+- `scripts/doctor.mjs`: kiểm tra cài đặt, JavaScript thuần (chạy được trước `npm install`).
 - `bot/`: Telegram bot nhận lệnh, bot gọi Claude bằng `claude -p` (dùng tài khoản đã đăng nhập).
 - `workspace/`: dữ liệu chạy, không commit.
 
@@ -34,7 +41,10 @@ npm run plan -- <video> --captions <captions.json> --workflow shop-ads --request
 npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
 npm run studio                        # xem template Remotion
 npm run qa -- <video>                 # kiểm tra video cuối
-npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
+npm run learn-style -- learn <video> --name <tên>   # học phong cách từ video mẫu (đối thủ)
+npm run lessons -- list|add|forget|errors           # bài học từ góp ý, lỗi chưa có cách sửa
+npm run doctor                        # kiểm tra máy đã cài đủ chưa
+npm run job -- <link Drive|file> --workflow shop-ads --request "..." [--style <tên>]   # chạy cả luồng, không cần Telegram
 npm run bot                           # bật bot Telegram
 npm run bot:install                   # bot chạy nền, tự bật khi đăng nhập (bot:status, bot:uninstall)
 npm run drive:auth                    # đăng nhập Google Drive một lần
@@ -53,10 +63,13 @@ npm run typecheck
 - `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
 
 - `video-qa`: kiểm tra khung đen, đứng hình, mất tiếng, âm lượng, độ dài
+- `style-learn`: học phong cách (hook, nhịp cắt, giọng văn, chữ trên màn hình) từ video mẫu, lưu `knowledge/styles/`
+- `lessons`: ghi nhớ góp ý thành quy tắc tự áp dụng, ghi lỗi đã gặp và cách sửa
+- `setup-guide`: kiểm tra máy, hướng dẫn cài từng bước (macOS, Windows)
 
 ## Luồng tự động
 
-- `bot/`: Telegram (`/ads`, `/faceless`, `/dub`, `/status`, `/retry`, nút duyệt kịch bản). Chỉ chat trong `TELEGRAM_ALLOWED_CHAT_IDS` được dùng. Nhận video gửi thẳng (≤20 MB, lệnh ở chú thích, nguồn `telegram:<file_id>:<tên>`) hoặc link Drive; kết quả ≤50 MB được gửi lại vào chat.
+- `bot/`: Telegram (`/ads`, `/faceless`, `/dub`, `/status`, `/retry`, `/sua`, `/baihoc`, `/quen`, `/hocvideo`, nút duyệt kịch bản). `style:<tên>` trong lệnh để theo phong cách đã học. Góp ý kịch bản và `/sua` được Claude rút thành quy tắc lưu vào `knowledge/lessons.json`; job lỗi khớp `known-errors.json` thì bot gửi kèm cách sửa. Chỉ chat trong `TELEGRAM_ALLOWED_CHAT_IDS` được dùng. Nhận video gửi thẳng (≤20 MB, lệnh ở chú thích, nguồn `telegram:<file_id>:<tên>`) hoặc link Drive; kết quả ≤50 MB được gửi lại vào chat.
 - `core/jobs/runner.ts`: chạy các bước `download → <steps của workflow> → upload`, lưu `workspace/jobs/<id>/job.json` sau mỗi bước. Chạy lại thì tiếp từ bước chưa xong. Bước `script` dừng job ở `waiting_approval` tới khi kịch bản được duyệt.
 - `core/queue/`: chạy từng job một.
 - Storage: `google-drive` (REST API qua fetch, OAuth refresh token) hoặc `local` (`workspace/inbox` → `workspace/outbox`).
@@ -72,3 +85,4 @@ npm run typecheck
 - Giao diện chung: `core/contracts/providers.ts`. Thêm provider: viết class trong `integrations/<loại>/<tên>/`, đăng ký trong `integrations/registry.ts`.
 - Hiện có: ElevenLabs (TTS + ASR), Claude (LLM, qua lệnh `claude -p`, chạy trong thư mục tạm để không nạp CLAUDE.md này). Vbee, Saydi, Whisper chờ thêm.
 - Prompt gọi Claude tự động nằm trong `prompts/`. Claude phải trả JSON; code tự làm sạch, kiểm tra và hỏi lại 1 lần nếu sai.
+- `LlmProvider.complete(prompt, { images })`: Claude CLI chép ảnh vào thư mục tạm và chỉ cho dùng công cụ Read để xem (dùng cho `style-learn`).

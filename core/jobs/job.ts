@@ -16,6 +16,8 @@ export interface JobState {
   request?: string; // yêu cầu edit tự do
   brief?: string; // nội dung để Claude viết kịch bản (faceless)
   script?: string; // kịch bản có sẵn (dubbing)
+  style?: string; // phong cách đã học (knowledge/styles), áp vào kịch bản và hiệu ứng
+  revisions?: { at: string; request: string }[]; // các lần người dùng yêu cầu sửa sau khi xong (/sua)
   chatId?: number; // Telegram chat gửi lệnh
   steps: { name: string; status: StepStatus; error?: string; note?: string }[];
   artifacts: {

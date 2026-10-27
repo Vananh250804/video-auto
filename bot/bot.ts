@@ -1,12 +1,15 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { createJob, loadJob, saveJob, type JobState } from "../core/jobs/job.ts";
 import { stepsFor, type JobEvent, type RunnerDeps, runJob } from "../core/jobs/runner.ts";
+import { hintForError, knowledgeDir, learnFromFeedback, loadLessons, removeLesson, type Lesson } from "../core/knowledge/lessons.ts";
+import { learnStyle, styleSummary } from "../core/knowledge/style-learn.ts";
+import { loadConfig } from "../core/config/index.ts";
 import { reviseScript } from "../core/planner/script-writer.ts";
 import { SerialQueue } from "../core/queue/queue.ts";
-import { setStatus } from "../core/review/review-state.ts";
+import { readReview, setStatus } from "../core/review/review-state.ts";
 import type { ScriptCheck } from "../core/review/script-checks.ts";
 import { MAX_DOWNLOAD_BYTES, MAX_UPLOAD_BYTES, type TelegramApi, type TgButton, type TgFile, type TgUpdate } from "../integrations/delivery/telegram/index.ts";
 import { safeFileName } from "../integrations/storage/google-drive/index.ts";
@@ -24,7 +27,12 @@ export interface BotDeps {
   jobsDir: string;
   runnerDeps: Omit<RunnerDeps, "notify">;
   runner?: typeof runJob;
+  knowledgeDir?: string; // mặc định knowledge/ trong repo, test thay bằng thư mục tạm
+  learner?: typeof learnStyle;
 }
+
+// Bước phải chạy lại khi người dùng yêu cầu sửa video đã xong
+const FIX_STEPS = new Set(["plan", "render", "qa", "upload"]);
 
 export function newJobId(now = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
@@ -45,7 +53,7 @@ function attachedVideo(m: TgUpdate["message"]): TgFile | undefined {
 
 // Lệnh kèm video gửi thẳng: lấy video đó làm nguồn, bỏ qua link Drive nếu có
 export function withVideo(cmd: Command, video: TgFile | undefined): Command {
-  if (!video || cmd.kind !== "job") return cmd;
+  if (!video || (cmd.kind !== "job" && cmd.kind !== "learn")) return cmd;
   if ((video.file_size ?? 0) > MAX_DOWNLOAD_BYTES) {
     throw new Error(`Video ${Math.round((video.file_size ?? 0) / 1024 / 1024)} MB, Telegram chỉ cho bot tải tối đa 20 MB. Up lên Drive rồi gửi lệnh kèm link.`);
   }
@@ -63,6 +71,19 @@ export class VideoBot {
 
   private get run() {
     return this.deps.runner ?? runJob;
+  }
+
+  private get knowledge() {
+    return this.deps.knowledgeDir ?? knowledgeDir();
+  }
+
+  // Học ở nền: không làm chậm phản hồi, lỗi chỉ ghi log
+  private learn(chatId: number, run: () => Promise<Lesson[]>) {
+    run()
+      .then(async (added) => {
+        if (added.length) await this.send(chatId, `🧠 Đã ghi nhớ cho lần sau:\n${added.map((l) => `• ${l.rule} (${l.id})`).join("\n")}\n\nSai thì gửi /quen <mã>.`);
+      })
+      .catch((err) => console.error(`Không rút được bài học: ${err.message}`));
   }
 
   private dir(jobId: string): string {
@@ -97,9 +118,11 @@ export class VideoBot {
         await this.send(job.chatId, `✅ Xong job ${job.id}\n${event.url ?? event.final}${notes.length ? `\n\n${notes.join("\n")}` : ""}${qa}`);
         break;
       }
-      case "failed":
-        await this.send(job.chatId, `❌ Job ${job.id} lỗi ở bước ${STEP_LABEL[event.step] ?? event.step}:\n${event.error}\n\nSửa xong gửi /retry ${job.id} để chạy tiếp.`);
+      case "failed": {
+        const hint = hintForError(event.error, this.knowledge);
+        await this.send(job.chatId, `❌ Job ${job.id} lỗi ở bước ${STEP_LABEL[event.step] ?? event.step}:\n${event.error}${hint ? `\n\n💡 Cách sửa: ${hint}` : ""}\n\nSửa xong gửi /retry ${job.id} để chạy tiếp.`);
         break;
+      }
       case "note":
         break;
     }
@@ -190,13 +213,102 @@ export class VideoBot {
           ...(cmd.workflow === "shop-ads" && cmd.text ? { request: cmd.text } : {}),
           ...(cmd.workflow === "faceless" ? { brief: cmd.text } : {}),
           ...(cmd.workflow === "dubbing" ? { script: cmd.text } : {}),
+          ...(cmd.style ? { style: cmd.style } : {}),
         }, stepsFor(cmd.workflow));
         const ahead = this.queue.length;
         await this.send(chatId, `📥 Đã nhận job ${id} (${cmd.workflow}).${ahead ? ` Có ${ahead} job đang chạy trước.` : ""}`);
         this.enqueue(dir);
         return;
       }
+      case "fix":
+        return this.onFix(chatId, cmd.jobId, cmd.request);
+      case "lessons":
+        return this.send(chatId, await this.lessonsText());
+      case "forget": {
+        const removed = await removeLesson(cmd.lessonId, this.knowledge);
+        return this.send(chatId, removed ? `🗑 Đã bỏ: ${removed.rule}` : "Không có bài học với mã này. Gõ /baihoc để xem.");
+      }
+      case "learn":
+        return this.onLearn(chatId, cmd.name, cmd.source, cmd.note);
     }
+  }
+
+  // Sửa video đã xong: thêm yêu cầu, chạy lại từ bước lên hiệu ứng, và ghi nhớ góp ý cho các video sau
+  private async onFix(chatId: number, jobId: string | undefined, request: string) {
+    if (!request) throw new Error("Thiếu yêu cầu sửa. Ví dụ: /sua chữ highlight to hơn, bỏ nhạc nền");
+    const id = jobId ?? (await this.latestJob(chatId, ["done", "failed"]));
+    if (!id) throw new Error("Chưa có job nào để sửa.");
+    const dir = this.dir(id);
+    const job = await loadJob(dir);
+    if (job.chatId !== chatId) throw new Error("Không tìm thấy job này.");
+    if (job.status !== "done" && job.status !== "failed") return this.send(chatId, `Job ${job.id} đang ${STATUS_LABEL[job.status]}, đợi xong rồi sửa.`);
+    if (!job.steps.some((s) => s.name === "plan" && s.status === "done")) throw new Error(`Job ${job.id} chưa tới bước lên hiệu ứng. Dùng /retry ${job.id}.`);
+    const previous = job.request?.trim();
+    job.request = [previous, `Người dùng yêu cầu sửa: ${request}`].filter(Boolean).join("\n");
+    job.revisions = [...(job.revisions ?? []), { at: new Date().toISOString(), request }];
+    for (const step of job.steps) {
+      if (FIX_STEPS.has(step.name)) Object.assign(step, { status: "pending", error: undefined, note: undefined });
+    }
+    delete job.artifacts.final;
+    delete job.artifacts.url;
+    delete job.artifacts.qa;
+    job.status = "queued";
+    await saveJob(dir, job);
+    await this.send(chatId, `🔧 Đang sửa job ${job.id}: ${request}`);
+    this.enqueue(dir);
+    this.learn(chatId, () => learnFromFeedback({
+      llm: this.deps.runnerDeps.llm(),
+      scope: "edit",
+      workflow: job.workflow,
+      feedback: request,
+      context: `Yêu cầu trước: ${previous || "(mặc định)"}`,
+      dir: this.knowledge,
+    }));
+  }
+
+  // Học phong cách từ video mẫu, chạy trong hàng đợi chung vì nặng (tách lời, phân tích ảnh)
+  private async onLearn(chatId: number, name: string, source: string, note: string) {
+    if (!/^[\w-]+$/.test(name)) throw new Error("Đặt tên phong cách không dấu, ví dụ: /hocvideo doi-thu-a <link Drive> (hoặc gửi video kèm chú thích /hocvideo doi-thu-a)");
+    if (!source) throw new Error("Gửi video kèm chú thích /hocvideo <tên>, hoặc /hocvideo <tên> <link Drive>.");
+    const workDir = join(dirname(this.deps.jobsDir), "learn", `${name}-${newJobId()}`);
+    await this.send(chatId, `🎓 Đang học phong cách "${name}" (tách lời, đo cảnh, xem khung hình)...`);
+    this.queue.push(async () => {
+      const tg = source.match(/^telegram:([^:]+):(.+)$/);
+      const storage = this.deps.runnerDeps.storage;
+      if (!tg && !storage) throw new Error("Chưa nối Google Drive để tải video.");
+      const file = tg ? await this.telegramFile(tg[1], join(workDir, "input"), tg[2]) : await storage!.download(source, join(workDir, "input"));
+      const { profile } = await (this.deps.learner ?? learnStyle)({
+        video: file.path,
+        name,
+        workDir,
+        llm: this.deps.runnerDeps.llm(),
+        asr: this.deps.runnerDeps.asr(),
+        language: loadConfig().language,
+        source: tg ? file.name : source,
+        note,
+        knowledge: this.knowledge,
+      });
+      await this.send(chatId, styleSummary(profile));
+    }).catch(async (err) => {
+      const hint = hintForError(err.message, this.knowledge);
+      await this.send(chatId, `❌ Học video lỗi: ${err.message}${hint ? `\n💡 ${hint}` : ""}`);
+    });
+  }
+
+  private async lessonsText(): Promise<string> {
+    const lessons = await loadLessons(this.knowledge);
+    if (!lessons.length) return "Chưa có bài học nào. Khi bạn góp ý kịch bản hoặc /sua video, bot tự ghi nhớ.";
+    const label = { script: "Kịch bản", edit: "Edit" } as const;
+    return `🧠 Bài học đang áp dụng:\n${lessons.slice(-30).map((l) => `• [${label[l.scope]}${l.workflow ? `, ${l.workflow}` : ""}] ${l.rule} (${l.id})`).join("\n")}\n\nBỏ một bài: /quen <mã>`;
+  }
+
+  private async latestJob(chatId: number, statuses: string[]): Promise<string | undefined> {
+    if (!existsSync(this.deps.jobsDir)) return undefined;
+    for (const id of readdirSync(this.deps.jobsDir).sort().reverse()) {
+      const job = await loadJob(join(this.deps.jobsDir, id)).catch(() => null);
+      if (job && job.chatId === chatId && statuses.includes(job.status)) return job.id;
+    }
+    return undefined;
   }
 
   private async onButton(chatId: number, q: NonNullable<TgUpdate["callback_query"]>) {
@@ -226,8 +338,10 @@ export class VideoBot {
     const job = await loadJob(dir);
     await setStatus(dir, "changes_requested", feedback);
     await this.send(chatId, "✏️ Đang viết lại kịch bản...");
-    const { state } = await reviseScript({ dir, feedback, workflow: job.workflow, llm: this.deps.runnerDeps.llm() });
+    const previous = (await readReview(dir)).script;
+    const { state } = await reviseScript({ dir, feedback, workflow: job.workflow, style: job.style, llm: this.deps.runnerDeps.llm() });
     await this.send(chatId, scriptMessage(state.script, state.check), this.approvalButtons(job.id));
+    this.learn(chatId, () => learnFromFeedback({ llm: this.deps.runnerDeps.llm(), scope: "script", workflow: job.workflow, feedback, context: previous, dir: this.knowledge }));
   }
 
   private async statusText(chatId: number): Promise<string> {

@@ -37,8 +37,8 @@ export interface TtsProvider {
 
 export interface LlmProvider {
   readonly name: string;
-  // Gửi một prompt, nhận lại văn bản trả lời
-  complete(prompt: string): Promise<string>;
+  // Gửi một prompt, nhận lại văn bản trả lời. images: ảnh kèm theo để model xem (provider tự báo tên file trong prompt).
+  complete(prompt: string, opts?: { images?: string[] }): Promise<string>;
 }
 
 export interface StoredFile {
