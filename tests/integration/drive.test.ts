@@ -69,3 +69,39 @@ test("Drive: refresh token hết hạn thì hướng dẫn đăng nhập lại",
   mock.method(globalThis, "fetch", async () => Response.json({ error: "invalid_grant" }, { status: 400 }));
   await assert.rejects(new GoogleDriveStorage(cfg).download("1BareIdABCDEFG", tmpdir()), /invalid_grant.*drive:auth/);
 });
+
+const netError = (code: string) => Object.assign(new TypeError("fetch failed"), { cause: { code } });
+
+test("Drive: upload mất mạng giữa chừng thì thử lại từ đầu", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "drive-"));
+  const file = join(dir, "final.mp4");
+  await writeFile(file, "FINAL");
+  let puts = 0;
+  mock.method(globalThis, "fetch", async (url: string, init: any = {}) => {
+    if (url.includes("oauth2")) return Response.json({ access_token: "at", expires_in: 3600 });
+    if (url.includes("uploadType=resumable")) return new Response(null, { status: 200, headers: { Location: "https://upload.example/s" } });
+    puts++;
+    await new Response(init.body).text();
+    if (puts === 1) throw netError("ECONNRESET");
+    return Response.json({ id: "ok1" });
+  });
+  const r = await new GoogleDriveStorage({ ...cfg, retryDelaysMs: [1, 1] }).upload(file, "a.mp4");
+  assert.equal(puts, 2);
+  assert.equal(r.url, "https://drive.google.com/file/d/ok1/view");
+});
+
+test("Drive: mất mạng hẳn thì báo rõ nguyên nhân, lỗi Drive thì không thử lại", async () => {
+  let calls = 0;
+  mock.method(globalThis, "fetch", async () => { calls++; throw netError("ENOTFOUND"); });
+  await assert.rejects(new GoogleDriveStorage({ ...cfg, retryDelaysMs: [1, 1] }).download("1BareIdABCDEFG", tmpdir()), /Mất kết nối tới Google Drive sau 3 lần thử \(ENOTFOUND\)/);
+  assert.equal(calls, 3);
+
+  mock.restoreAll();
+  calls = 0;
+  mock.method(globalThis, "fetch", async (url: string) => {
+    calls++;
+    return url.includes("oauth2") ? Response.json({ access_token: "at", expires_in: 3600 }) : Response.json({ error: "x" }, { status: 403 });
+  });
+  await assert.rejects(new GoogleDriveStorage({ ...cfg, retryDelaysMs: [1, 1] }).download("1BareIdABCDEFG", tmpdir()), /Google Drive 403/);
+  assert.equal(calls, 2);
+});
