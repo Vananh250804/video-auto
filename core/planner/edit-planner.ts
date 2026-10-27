@@ -7,6 +7,7 @@ import { probe } from "../media/probe.ts";
 import { validateEdit, type EditSpec } from "../render/edit-spec.ts";
 import { resolvePath } from "../render/render.ts";
 import type { Caption } from "../subtitles/captions.ts";
+import { lessonsForPrompt } from "../knowledge/lessons.ts";
 import { extractJson, fillTemplate } from "./json.ts";
 import { loadWorkflow } from "./workflows.ts";
 
@@ -15,6 +16,7 @@ export interface PlanInput {
   captions?: string;
   workflow: string;
   request?: string; // yêu cầu tự do của người dùng, bỏ trống = mặc định
+  style?: string; // phong cách đã học trong knowledge/styles
   llm: LlmProvider;
 }
 
@@ -119,6 +121,7 @@ export async function planEdit(input: PlanInput): Promise<PlanResult> {
     caption_styles: [...ctx.captionStyles, "none"].join(", "),
     sfx_files: ctx.sfxFiles.join(", ") || "(trống)",
     music_files: ctx.musicFiles.join(", ") || "(trống)",
+    lessons: await lessonsForPrompt("edit", { workflow: workflow.name, style: input.style }),
     retry: "",
   };
 

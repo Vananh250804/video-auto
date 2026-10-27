@@ -5,9 +5,10 @@ import { loadConfig, projectRoot } from "../core/config/index.ts";
 import { createJob } from "../core/jobs/job.ts";
 import { runJob, stepsFor } from "../core/jobs/runner.ts";
 import { getAsr, getLlm, getStorage, getTts } from "../integrations/registry.ts";
+import { hintForError } from "../core/knowledge/lessons.ts";
 import { newJobId } from "./bot.ts";
 
-// Chạy cả luồng không cần Telegram: npm run job -- <link Drive hoặc file> --workflow shop-ads --request "..."
+// Chạy cả luồng không cần Telegram: npm run job -- <link Drive hoặc file> --workflow shop-ads --request "..." [--style <tên phong cách>]
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
@@ -15,6 +16,7 @@ const { values, positionals } = parseArgs({
     request: { type: "string", short: "r" },
     brief: { type: "string", short: "b" },
     script: { type: "string", short: "s" },
+    style: { type: "string" },
     storage: { type: "string" },
     resume: { type: "string" },
   },
@@ -29,7 +31,11 @@ const deps = {
     if (e.type === "step") console.error(`▶ ${e.step}`);
     else if (e.type === "note") console.error(`  ${e.message}`);
     else if (e.type === "waiting_approval") console.error(`\nKịch bản chờ duyệt:\n${e.script}\n\nDuyệt: npm run script -- approve --dir <thư mục job>, rồi chạy lại với --resume <thư mục job>`);
-    else if (e.type === "failed") console.error(`✖ ${e.step}: ${e.error}`);
+    else if (e.type === "failed") {
+      console.error(`✖ ${e.step}: ${e.error}`);
+      const hint = hintForError(e.error);
+      if (hint) console.error(`💡 ${hint}`);
+    }
   },
 };
 
@@ -46,6 +52,7 @@ try {
       ...(values.request ? { request: values.request } : {}),
       ...(values.brief ? { brief: values.brief } : {}),
       ...(values.script ? { script: values.script } : {}),
+      ...(values.style ? { style: values.style } : {}),
     }, stepsFor(values.workflow!));
   }
   const job = await runJob(dir, deps);

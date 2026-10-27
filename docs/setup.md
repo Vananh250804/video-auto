@@ -1,5 +1,15 @@
 # Cài đặt
 
+## Cách nhanh nhất: để Claude hướng dẫn
+
+1. Cài [Claude Code](https://code.claude.com/docs/en/setup) và đăng nhập (gõ `claude` trong terminal)
+2. Lấy code (`git clone`, xem bên dưới), mở Claude Code trong thư mục `video-auto`
+3. Claude tự chạy kiểm tra máy và hướng dẫn cài từng bước còn thiếu. Lần đầu mở, Claude Code hỏi có tin thư mục này không: chọn Yes để bước kiểm tra tự chạy.
+
+Tự kiểm tra bất cứ lúc nào: `node scripts/doctor.mjs` (hoặc `npm run doctor`). ✅ là xong, ❌ là bắt buộc phải làm, ⚠️ là tính năng chưa nối.
+
+## Cài tay
+
 Cần 3 thứ: **Node.js 20+**, **FFmpeg**, **Git**. Sau đó là **Claude Code** để dùng skill.
 
 ## macOS
@@ -142,6 +152,22 @@ Chưa muốn nối Drive: đặt `storage: local` trong `config/local.yaml`, b�
 npm run job -- "https://drive.google.com/file/d/.../view" --workflow shop-ads --request "làm nổi giá 199k"
 npm run job -- "video.mp4" --storage local --workflow dubbing --script "Câu thuyết minh..."
 npm run job -- --resume "workspace/jobs/<id>"   # chạy tiếp job bị lỗi
+```
+
+## Học từ góp ý, lỗi và video mẫu
+
+Hệ thống ghi nhớ vào thư mục `knowledge/` (có commit lên git, người nhận bàn giao cũng dùng được):
+
+- **Góp ý**: khi bấm ✏️ Sửa kịch bản, hoặc gửi `/sua <mã job> <yêu cầu>` cho video đã xong (bỏ mã job = job gần nhất), bot làm lại video và nhờ Claude rút góp ý thành quy tắc chung. Các video sau tự làm theo. `/baihoc` xem, `/quen <mã>` bỏ quy tắc sai.
+- **Lỗi**: job lỗi được ghi vào `workspace/logs/errors.jsonl`. Lỗi đã gặp (có trong `knowledge/known-errors.json`) thì bot gửi kèm cách sửa. Trong Claude Code, nói "xem các lỗi gần đây" để Claude rà và bổ sung cách sửa.
+- **Video đối thủ**: gửi video vào bot kèm chú thích `/hocvideo doi-thu-a` (hoặc `/hocvideo doi-thu-a <link Drive>`). Bot đo nhịp cắt, tách lời, xem khung hình, rồi gửi lại tóm tắt phong cách. Dùng: `/ads style:doi-thu-a làm nổi giá`, `/faceless style:doi-thu-a <nội dung>`.
+
+Hệ thống chưa ghép nhiều cảnh hay làm hiệu ứng chuyển cảnh, nên phần cách quay và chuyển cảnh của đối thủ được gửi thành "Gợi ý khi quay" để bạn tham khảo.
+
+Bot ghi vào `knowledge/` trên máy chạy bot. Thỉnh thoảng lưu lên git:
+
+```bash
+git add knowledge && git commit -m "Cập nhật bài học" && git push
 ```
 
 ## Dùng với Claude Code

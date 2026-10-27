@@ -35,4 +35,4 @@ Bạn là biên tập viên video TikTok/Reels tiếng Việt. Nhiệm vụ: lê
 - Mọi thời gian nằm trong khoảng 0 đến {{duration}}.
 - Chỉ dùng file sfx, nhạc có trong danh sách. Danh sách trống thì để "sfx": [] và "music": null.
 - Giá viết đúng như người nói (ví dụ "CHỈ 199K").
-{{retry}}
+{{lessons}}{{retry}}

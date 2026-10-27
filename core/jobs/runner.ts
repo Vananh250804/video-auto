@@ -16,6 +16,7 @@ import { renderEdit } from "../render/render.ts";
 import { readReview } from "../review/review-state.ts";
 import type { ScriptCheck } from "../review/script-checks.ts";
 import { loadJob, saveJob, type JobState } from "./job.ts";
+import { logError } from "../knowledge/lessons.ts";
 
 export type JobEvent =
   | { type: "step"; step: string }
@@ -96,7 +97,7 @@ const STEPS: Record<string, Step> = {
     }
     // Chưa có kịch bản, hoặc người dùng yêu cầu sửa (bot đã viết lại rồi chạy tiếp)
     if (!job.brief) throw new Error("Thiếu nội dung để viết kịch bản (brief).");
-    const { state } = await writeScript({ dir, brief: job.brief, workflow: job.workflow, llm: deps.llm() });
+    const { state } = await writeScript({ dir, brief: job.brief, workflow: job.workflow, style: job.style, llm: deps.llm() });
     await deps.notify(job, { type: "waiting_approval", script: state.script, check: state.check });
     throw new WaitForApproval();
   },
@@ -125,7 +126,7 @@ const STEPS: Record<string, Step> = {
     let edit: EditSpec;
     let note: string | undefined;
     if (job.request?.trim() || loadConfig().plan.auto_highlight) {
-      const r = await planEdit({ video: job.artifacts.video!, captions: job.artifacts.captions, workflow: job.workflow, request: job.request, llm: deps.llm() });
+      const r = await planEdit({ video: job.artifacts.video!, captions: job.artifacts.captions, workflow: job.workflow, request: job.request, style: job.style, llm: deps.llm() });
       edit = r.edit;
       note = [r.notes, ...r.dropped.map((d) => `bỏ: ${d}`)].filter(Boolean).join("; ");
     } else {
@@ -209,6 +210,7 @@ export async function runJob(dir: string, deps: RunnerDeps): Promise<JobState> {
       job.status = "failed";
       job.error = `${step.name}: ${step.error}`;
       await saveJob(dir, job);
+      await logError({ jobId: job.id, workflow: job.workflow, step: step.name, error: step.error }).catch(() => undefined);
       await deps.notify(job, { type: "failed", step: step.name, error: step.error });
       return job;
     }

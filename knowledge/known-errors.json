@@ -1,0 +1,38 @@
+[
+  {
+    "match": "Google Drive API has not been used|accessNotConfigured",
+    "fix": "Chưa bật Google Drive API: mở link trong lỗi (hoặc Google Cloud Console → APIs & Services → Library → Google Drive API), bấm Enable, đợi 1 đến 2 phút rồi /retry."
+  },
+  {
+    "match": "invalid_grant|Token has been expired or revoked",
+    "fix": "Đăng nhập Drive đã hết hạn: chạy npm run drive:auth. Nếu cứ 7 ngày lại hết hạn, vào OAuth consent screen bấm Publish app (chuyển sang In production)."
+  },
+  {
+    "match": "Không tìm thấy lệnh \"[^\"]*claude",
+    "fix": "Bot không thấy lệnh claude: chạy `which claude` (Windows: `where claude`), dán đường dẫn vào .env CLAUDE_PATH=..., rồi npm run bot:install lại."
+  },
+  {
+    "match": "ELEVENLABS_VOICE_ID|voice_id",
+    "fix": "Thiếu giọng đọc: vào ElevenLabs → Voices, chọn giọng tiếng Việt, Copy voice ID, dán vào .env ELEVENLABS_VOICE_ID=..."
+  },
+  {
+    "match": "ELEVENLABS_API_KEY|401.*elevenlabs|elevenlabs.*401",
+    "fix": "Key ElevenLabs thiếu hoặc sai: tạo lại ở ElevenLabs → Developers → API Keys, dán vào .env ELEVENLABS_API_KEY=..."
+  },
+  {
+    "match": "spawn ffmpeg ENOENT|spawn ffprobe ENOENT|không tìm thấy ffmpeg",
+    "fix": "Máy chưa có FFmpeg hoặc bot không thấy: chạy npm run doctor để xem cách cài, hoặc điền FFMPEG_PATH, FFPROBE_PATH trong .env."
+  },
+  {
+    "match": "browser|Chrome Headless Shell|Timeout.*render|timed out",
+    "fix": "Remotion chưa có trình duyệt render hoặc render quá lâu: chạy npx remotion browser ensure rồi /retry."
+  },
+  {
+    "match": "ENOTFOUND|ECONNRESET|ETIMEDOUT|fetch failed|EAI_AGAIN",
+    "fix": "Mất mạng giữa chừng: kiểm tra Internet rồi /retry."
+  },
+  {
+    "match": "ENOSPC|no space left",
+    "fix": "Ổ đĩa đầy: xóa bớt thư mục cũ trong workspace/jobs rồi /retry."
+  }
+]

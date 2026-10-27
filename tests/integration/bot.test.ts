@@ -7,6 +7,7 @@ import { VideoBot } from "../../bot/bot.ts";
 import { createJob, loadJob, saveJob } from "../../core/jobs/job.ts";
 import { stepsFor, type RunnerDeps } from "../../core/jobs/runner.ts";
 import { readReview, saveReview } from "../../core/review/review-state.ts";
+import { loadLessons } from "../../core/knowledge/lessons.ts";
 import type { TelegramApi, TgButton, TgUpdate } from "../../integrations/delivery/telegram/index.ts";
 
 const CHAT = 111;
@@ -15,6 +16,7 @@ let ran: string[] = [];
 let jobsDir = "";
 let downloads: { fileId: string; dest: string }[] = [];
 let videosSent: { chat: number; file: string }[] = [];
+let knowledge = "";
 
 const tg: TelegramApi = {
   async getUpdates() { return []; },
@@ -25,13 +27,15 @@ const tg: TelegramApi = {
   async sendVideo(chat, file) { videosSent.push({ chat, file }); },
 };
 
-function makeBot(llmAnswer = "{}", runner?: (dir: string, deps: RunnerDeps) => ReturnType<typeof loadJob>) {
+function makeBot(llmAnswer = "{}", runner?: (dir: string, deps: RunnerDeps) => ReturnType<typeof loadJob>, extra: Partial<ConstructorParameters<typeof VideoBot>[0]> = {}) {
   return new VideoBot({
     tg,
     allowedChats: new Set([CHAT]),
     jobsDir,
+    knowledgeDir: knowledge,
     runnerDeps: { llm: () => ({ name: "fake", complete: async () => llmAnswer }), tts: () => ({}) as any, asr: () => ({}) as any },
     runner: async (dir, deps) => { ran.push(dir); return runner ? runner(dir, deps) : loadJob(dir); },
+    ...extra,
   });
 }
 const msg = (text: string, chat = CHAT) => ({ update_id: 1, message: { message_id: 1, chat: { id: chat }, text } });
@@ -46,6 +50,7 @@ beforeEach(async () => {
   downloads = [];
   videosSent = [];
   jobsDir = await mkdtemp(join(tmpdir(), "bot-"));
+  knowledge = await mkdtemp(join(tmpdir(), "bot-knowledge-"));
 });
 
 test("chat lạ bị từ chối, được báo chat id", async () => {
@@ -166,4 +171,99 @@ test("job chạy: tải video Telegram qua bot, xong thì gửi video về chat"
   assert.equal(videosSent.length, 1);
   assert.equal(videosSent[0].chat, CHAT);
   assert.match(sent.at(-1)!.text, /Xong job[\s\S]*https:\/\/drive\/x/);
+});
+
+const wait = (ms = 30) => new Promise((r) => setTimeout(r, ms));
+const LESSON = JSON.stringify({ rules: [{ rule: "Chữ highlight luôn có nền vàng.", all_workflows: true }] });
+
+async function doneJob(id: string) {
+  const dir = join(jobsDir, id);
+  await mkdir(dir, { recursive: true });
+  const job = await createJob(dir, { id, workflow: "shop-ads", source: "x.mp4", request: "làm nổi giá", chatId: CHAT }, stepsFor("shop-ads"));
+  job.steps.forEach((s) => (s.status = "done"));
+  job.status = "done";
+  job.artifacts.final = "/tmp/final.mp4";
+  await saveJob(dir, job);
+  return dir;
+}
+
+test("/sua: thêm yêu cầu, chạy lại từ bước lên hiệu ứng, ghi nhớ bài học", async () => {
+  const dir = await doneJob("20261027-090000-aaaa");
+  await makeBot(LESSON).handleUpdate(msg("/sua chữ nền vàng"));
+  await wait();
+  const job = await loadJob(dir);
+  assert.deepEqual(ran, [dir]);
+  assert.equal(job.request, "làm nổi giá\nNgười dùng yêu cầu sửa: chữ nền vàng");
+  assert.deepEqual(job.steps.filter((s) => s.status === "pending").map((s) => s.name), ["plan", "render", "qa", "upload"]);
+  assert.equal(job.steps.find((s) => s.name === "cut")!.status, "done");
+  assert.equal(job.artifacts.final, undefined);
+  const lessons = await loadLessons(knowledge);
+  assert.equal(lessons[0].rule, "Chữ highlight luôn có nền vàng.");
+  assert.equal(lessons[0].scope, "edit");
+  assert.match(sent.at(-1)!.text, /Đã ghi nhớ[\s\S]*nền vàng/);
+});
+
+test("/baihoc liệt kê, /quen bỏ bài học", async () => {
+  await doneJob("20261027-090000-bbbb");
+  const bot = makeBot(LESSON);
+  await bot.handleUpdate(msg("/sua 20261027-090000-bbbb chữ nền vàng"));
+  await wait();
+  const [lesson] = await loadLessons(knowledge);
+  await bot.handleUpdate(msg("/baihoc"));
+  assert.ok(sent.at(-1)!.text.includes(`nền vàng. (${lesson.id})`));
+  await bot.handleUpdate(msg(`/quen ${lesson.id}`));
+  assert.match(sent.at(-1)!.text, /Đã bỏ/);
+  assert.equal((await loadLessons(knowledge)).length, 0);
+});
+
+test("góp ý kịch bản cũng được ghi nhớ (scope script)", async () => {
+  await waitingJob("j5");
+  let calls = 0;
+  const bot = makeBot("", undefined, {
+    runnerDeps: { llm: () => ({ name: "fake", complete: async () => (++calls === 1 ? JSON.stringify({ script: "Bản mới." }) : JSON.stringify({ rules: [{ rule: "Hook là câu hỏi." }] })) }), tts: () => ({}) as any, asr: () => ({}) as any },
+  });
+  await bot.handleUpdate({ update_id: 3, callback_query: { id: "q", from: { id: CHAT }, data: "edit:j5", message: { message_id: 6, chat: { id: CHAT } } } });
+  await bot.handleUpdate(msg("mở đầu bằng câu hỏi"));
+  await wait();
+  const [lesson] = await loadLessons(knowledge);
+  assert.equal(lesson.scope, "script");
+  assert.equal(lesson.workflow, "faceless");
+});
+
+test("job lỗi đã biết: bot gửi kèm cách sửa", async () => {
+  const dir = await doneJob("20261027-090000-cccc");
+  const bot = makeBot("{}", async (d, deps) => {
+    const job = await loadJob(d);
+    await deps.notify(job, { type: "failed", step: "upload", error: "Google Drive 403: Google Drive API has not been used in project 1" });
+    return job;
+  });
+  await writeFile(join(knowledge, "known-errors.json"), JSON.stringify([{ match: "has not been used", fix: "Bật Drive API." }]));
+  bot.enqueue(dir);
+  await wait();
+  assert.match(sent.at(-1)!.text, /💡 Cách sửa: Bật Drive API/);
+});
+
+test("/hocvideo: video gửi thẳng, tải về rồi học phong cách", async () => {
+  let got: any;
+  const bot = makeBot("{}", undefined, {
+    learner: async (opts) => {
+      got = opts;
+      return { profile: { name: opts.name, summary: "nhanh", source: "", learnedAt: "", stats: { durationSec: 10, aspectRatio: "9:16", shots: 5, avgShotSec: 2, cutsPerMinute: 24 }, transcript: "", analysis: { hook: "câu hỏi" }, rules: { script: ["Mở bằng câu hỏi."], edit: [] } }, file: "" };
+    },
+  });
+  await bot.handleUpdate(videoMsg("/hocvideo doi-thu-a học hook"));
+  await wait(50);
+  assert.deepEqual(downloads.map((d) => d.fileId), ["VID123"]);
+  assert.equal(got.name, "doi-thu-a");
+  assert.equal(got.note, "học hook");
+  assert.equal(got.knowledge, knowledge);
+  assert.match(sent.at(-1)!.text, /Đã học phong cách "doi-thu-a"[\s\S]*Mở bằng câu hỏi[\s\S]*style:doi-thu-a/);
+});
+
+test("/ads style:<tên> lưu phong cách vào job", async () => {
+  await makeBot().handleUpdate(msg("/ads style:doi-thu-a làm nổi giá"));
+  await wait();
+  const job = await loadJob(ran[0]);
+  assert.equal(job.style, "doi-thu-a");
+  assert.equal(job.request, "làm nổi giá");
 });
