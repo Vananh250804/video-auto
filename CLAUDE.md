@@ -36,6 +36,7 @@ npm run studio                        # xem template Remotion
 npm run qa -- <video>                 # kiểm tra video cuối
 npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
 npm run bot                           # bật bot Telegram
+npm run bot:install                   # bot chạy nền, tự bật khi đăng nhập (bot:status, bot:uninstall)
 npm run drive:auth                    # đăng nhập Google Drive một lần
 npm test                              # cần ffmpeg
 npm run typecheck
