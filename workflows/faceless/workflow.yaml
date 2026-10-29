@@ -13,3 +13,4 @@ defaults:
   originalVolume: 0
   overlays_hint: "Nhấn mạnh ý chính, con số, câu hook ở 3 giây đầu. 2 đến 4 chữ highlight."
   sfx_hint: "Whoosh khi sang ý mới, pop khi chữ highlight hiện, riser rồi impact cho khoảnh khắc bất ngờ, gasp khi có chi tiết gây sốc."
+  zooms_hint: "Zoom nhẹ (1.06 đến 1.1) mỗi khi sang ý mới, để hình không đứng yên."

@@ -8,5 +8,6 @@
   "strokeWidth": 0.14,
   "background": null,
   "uppercase": true,
-  "popIn": true
+  "popIn": true,
+  "wordPop": true
 }

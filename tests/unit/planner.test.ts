@@ -81,3 +81,16 @@ test("danh mục sfx đọc được và mô tả đi kèm file cho prompt", asy
   assert.ok(text.includes(`${catalog[0].file}: ${catalog[0].use}`));
   assert.ok(text.includes("assets/sfx/la.wav"));
 });
+
+test("sanitizePlan: zoom bỏ cái ngắn/chồng, kẹp scale; overlay giá cần was > now", () => {
+  const { plan, dropped } = sanitizePlan({
+    overlays: [
+      { kind: "price", was: 299000, now: 199000, start: 2, end: 5, position: "center" },
+      { kind: "price", was: 100000, now: 150000, start: 6, end: 8 },
+    ],
+    zooms: [{ start: 4, end: 6, scale: 2 }, { start: 1, end: 3 }, { start: 5, end: 7 }, { start: 8, end: 8.3 }],
+  }, ctx);
+  assert.deepEqual(plan.overlays, [{ kind: "price", was: 299000, now: 199000, start: 2, end: 5, position: "center" }]);
+  assert.deepEqual(plan.zooms, [{ start: 1, end: 3, scale: 1.12 }, { start: 4, end: 6, scale: 1.3 }]);
+  assert.equal(dropped.length, 3);
+});

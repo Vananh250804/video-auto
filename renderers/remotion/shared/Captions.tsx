@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import type { CaptionStyle, RenderCaption } from "./types.ts";
 import type { Layout } from "./layout.ts";
 import { resolveFont } from "./fonts.ts";
@@ -48,13 +48,16 @@ export const Captions: React.FC<{ captions: RenderCaption[]; style: CaptionStyle
             <span
               key={i}
               style={{
+                display: style.wordPop ? "inline-block" : undefined,
+                marginRight: style.wordPop && i < words.length - 1 ? "0.38em" : undefined,
+                transform: style.wordPop ? `scale(${wordBump(frame - Math.round(w.start * fps), fps)})` : undefined,
                 color: t >= w.start ? style.activeColor : style.color,
                 WebkitTextStroke: style.strokeWidth > 0 ? `${fontSize * style.strokeWidth}px ${style.strokeColor}` : undefined,
                 paintOrder: "stroke fill",
               }}
             >
               {w.text}
-              {i < words.length - 1 ? " " : ""}
+              {i < words.length - 1 && !style.wordPop ? " " : ""}
             </span>
           ))}
         </span>
@@ -62,3 +65,10 @@ export const Captions: React.FC<{ captions: RenderCaption[]; style: CaptionStyle
     </AbsoluteFill>
   );
 };
+
+// Từ vừa được đọc: to lên 1.15 rồi về 1 trong khoảng 8 khung hình
+function wordBump(f: number, fps: number): number {
+  if (f < 0 || f > 10) return 1;
+  const p = spring({ frame: f, fps, config: { damping: 12, stiffness: 260, mass: 0.5 } });
+  return interpolate(p, [0, 0.5, 1], [1, 1.15, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+}

@@ -22,7 +22,11 @@ const sample: EditProps = {
     fontFamily: "Be Vietnam Pro", fontWeight: 800, fontScale: 0.075, color: "#FFFFFF", activeColor: "#FFE14D",
     strokeColor: "#000000", strokeWidth: 0.14, background: null, uppercase: true, popIn: true,
   },
-  overlays: [{ text: "GIẢM 50%", start: 1, end: 4, position: "top", color: "#FFFFFF", background: "#FF2D55" }],
+  overlays: [
+    { kind: "text", text: "GIẢM 50%", start: 0, end: 1.8, position: "top", color: "#FFFFFF", background: "#FF2D55" },
+    { kind: "price", text: "CHỈ CÒN", was: 299000, now: 199000, start: 2, end: 4.8, position: "center", color: "#FFFFFF", background: "#FF2D55" },
+  ],
+  zooms: [{ start: 1.2, end: 2.6, scale: 1.12 }],
   sfx: [],
   music: null,
 };

@@ -12,3 +12,4 @@ defaults:
   originalVolume: 0.12
   overlays_hint: "Ít chữ highlight (0 đến 2), chỉ cho con số hoặc ý quan trọng nhất."
   sfx_hint: "Hạn chế sfx."
+  zooms_hint: "Hạn chế zoom, chỉ ở 1 đến 2 khoảnh khắc chính."

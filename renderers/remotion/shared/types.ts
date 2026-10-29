@@ -24,12 +24,16 @@ export interface CaptionStyle {
   background: string | null; // null = không có nền
   uppercase: boolean;
   popIn: boolean;
+  wordPop?: boolean; // từ đang đọc nảy to lên một nhịp
 }
 
 export type OverlayPosition = "top" | "center" | "bottom";
 
 export interface RenderOverlay {
+  kind: "text" | "price";
   text: string;
+  was?: number;
+  now?: number;
   start: number;
   end: number;
   position: OverlayPosition;
@@ -41,6 +45,12 @@ export interface RenderSound {
   src: string;
   at: number;
   volume: number;
+}
+
+export interface RenderZoom {
+  start: number;
+  end: number;
+  scale: number;
 }
 
 export type TemplateName = "portrait-9x16" | "landscape-16x9" | "square-1x1";
@@ -57,6 +67,7 @@ export interface EditProps {
   captions: RenderCaption[];
   captionStyle: CaptionStyle | null;
   overlays: RenderOverlay[];
+  zooms: RenderZoom[];
   sfx: RenderSound[];
   music: { src: string; volume: number } | null;
 }

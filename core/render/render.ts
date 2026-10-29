@@ -17,7 +17,7 @@ const TEMPLATE_BY_RATIO: Record<AspectRatio, TemplateName> = {
   "16:9": "landscape-16x9",
 };
 
-const OVERLAY_DEFAULT = { position: "top" as const, color: "#FFFFFF", background: "#FF2D55" };
+const OVERLAY_DEFAULT = { kind: "text" as const, text: "", position: "top" as const, color: "#FFFFFF", background: "#FF2D55" };
 
 export const resolvePath = (p: string) => (isAbsolute(p) ? p : resolve(projectRoot(), p));
 
@@ -66,6 +66,7 @@ export async function buildProps(spec: EditSpec): Promise<{ props: EditProps; fi
     captions,
     captionStyle: await loadCaptionStyle(spec.captionStyle ?? "tiktok"),
     overlays: (spec.overlays ?? []).map((o) => ({ ...OVERLAY_DEFAULT, ...o })),
+    zooms: (spec.zooms ?? []).map((z) => ({ start: z.start, end: z.end, scale: z.scale ?? 1.12 })),
     sfx: (spec.sfx ?? []).map((s) => ({ src: url(mustExist(resolvePath(s.file), "sfx")), at: s.at, volume: s.volume ?? 1 })),
     music: spec.music ? { src: url(mustExist(resolvePath(spec.music.file), "nhạc")), volume: spec.music.volume ?? 0.15 } : null,
   };

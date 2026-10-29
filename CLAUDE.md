@@ -65,6 +65,8 @@ npm run typecheck
 ## Render
 
 - `edit.json` là đầu vào duy nhất của render (schema `schemas/edit.schema.json`, kiểm tra trong `core/render/edit-spec.ts`). `edit-planner` sẽ sinh file này.
+- `edit.json` có: phụ đề, chữ highlight, overlay giá (`kind: "price"`, giá cũ gạch → giá mới), zoom giật (`zooms`), sfx, nhạc. Video dọc giữ chữ trong vùng an toàn TikTok (`portrait-9x16/layout.ts`).
+- Sau render: `npm run qa -- <video> --sheet` rồi xem ảnh ghép.
 - Remotion: `renderers/remotion/`. Font Be Vietnam Pro nằm sẵn trong `assets/fonts/`, không tải từ mạng.
 - Tất cả package `remotion` và `@remotion/*` phải cùng một phiên bản, ghi chính xác (không có `^`).
 

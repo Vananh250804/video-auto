@@ -12,6 +12,7 @@ export interface Workflow {
     originalVolume: number;
     overlays_hint: string;
     sfx_hint: string;
+    zooms_hint?: string;
   };
 }
 

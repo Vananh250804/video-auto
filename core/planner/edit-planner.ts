@@ -65,12 +65,20 @@ export function sanitizePlan(
     const text = String(o?.text ?? "").trim();
     const start = clamp(o?.start);
     const end = clamp(o?.end);
-    if (!text || end <= start) {
+    const isPrice = o?.kind === "price";
+    const was = Math.round(Number(o?.was));
+    const now = Math.round(Number(o?.now));
+    if (isPrice && !(now > 0 && was > now)) {
+      dropped.push(`giá "${o?.was} → ${o?.now}" không hợp lệ (cần was > now > 0)`);
+      return [];
+    }
+    if ((!isPrice && !text) || end <= start) {
       dropped.push(`chữ highlight "${text}" sai thời gian`);
       return [];
     }
     return [{
-      text,
+      ...(isPrice ? { kind: "price" as const, was, now } : {}),
+      ...(text ? { text } : {}),
       start,
       end,
       position: ["top", "center", "bottom"].includes(o.position) ? o.position : "top",
@@ -78,6 +86,17 @@ export function sanitizePlan(
       ...(typeof o.background === "string" ? { background: o.background } : {}),
     }];
   });
+
+  // Zoom giật: sắp theo thời gian, bỏ cái quá ngắn hoặc chồng lên cái trước
+  const zooms: { start: number; end: number; scale: number }[] = [];
+  const rawZooms = (Array.isArray(raw.zooms) ? raw.zooms : []).map((z: any) => ({ start: clamp(z?.start), end: clamp(z?.end), scale: Number(z?.scale) }));
+  for (const z of rawZooms.sort((a: any, b: any) => a.start - b.start)) {
+    if (z.end - z.start < 0.6 || (zooms.length && z.start < zooms[zooms.length - 1].end)) {
+      dropped.push(`zoom ${z.start}-${z.end}s quá ngắn hoặc chồng lên zoom khác`);
+      continue;
+    }
+    zooms.push({ ...z, scale: round(Number.isFinite(z.scale) ? Math.min(1.3, Math.max(1.05, z.scale)) : 1.12) });
+  }
 
   const sfx = (Array.isArray(raw.sfx) ? raw.sfx : []).flatMap((s: any) => {
     if (!ctx.sfxFiles.includes(s?.file)) {
@@ -93,7 +112,7 @@ export function sanitizePlan(
     else dropped.push(`nhạc "${raw.music.file}" không có trong assets/music`);
   }
 
-  return { plan: { captionStyle, originalVolume, overlays, sfx, ...(music ? { music } : {}) }, dropped };
+  return { plan: { captionStyle, originalVolume, overlays, zooms, sfx, ...(music ? { music } : {}) }, dropped };
 }
 
 export async function planEdit(input: PlanInput): Promise<PlanResult> {
@@ -117,6 +136,7 @@ export async function planEdit(input: PlanInput): Promise<PlanResult> {
     request: input.request?.trim() || "(không có, dùng mặc định cho loại video này)",
     overlays_hint: workflow.defaults.overlays_hint,
     sfx_hint: workflow.defaults.sfx_hint,
+    zooms_hint: workflow.defaults.zooms_hint ?? "Không có gợi ý riêng.",
     caption_styles: [...ctx.captionStyles, "none"].join(", "),
     sfx_files: describeSfxFiles(ctx.sfxFiles) || "(trống)",
     music_files: ctx.musicFiles.join(", ") || "(trống)",
