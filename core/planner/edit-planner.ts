@@ -9,6 +9,7 @@ import { resolvePath } from "../render/render.ts";
 import type { Caption } from "../subtitles/captions.ts";
 import { extractJson, fillTemplate } from "./json.ts";
 import { loadWorkflow } from "./workflows.ts";
+import { describeSfxFiles } from "../audio/sfx.ts";
 
 export interface PlanInput {
   video: string;
@@ -117,7 +118,7 @@ export async function planEdit(input: PlanInput): Promise<PlanResult> {
     overlays_hint: workflow.defaults.overlays_hint,
     sfx_hint: workflow.defaults.sfx_hint,
     caption_styles: [...ctx.captionStyles, "none"].join(", "),
-    sfx_files: ctx.sfxFiles.join(", ") || "(trống)",
+    sfx_files: describeSfxFiles(ctx.sfxFiles) || "(trống)",
     music_files: ctx.musicFiles.join(", ") || "(trống)",
     retry: "",
   };

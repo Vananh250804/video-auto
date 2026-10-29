@@ -38,6 +38,8 @@ export interface AppConfig {
     tts_model: string;
     asr_model: string;
     voice_id: string;
+    sfx_model: string;
+    sfx_prompt_influence: number;
   };
 }
 
