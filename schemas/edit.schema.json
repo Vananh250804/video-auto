@@ -17,15 +17,32 @@
       "description": "Chữ highlight nổi lên (pop)",
       "items": {
         "type": "object",
-        "required": ["text", "start", "end"],
+        "required": ["start", "end"],
         "additionalProperties": false,
         "properties": {
-          "text": { "type": "string" },
+          "kind": { "enum": ["text", "price"], "default": "text", "description": "price: giá cũ bị gạch rồi giá mới nhảy số, % giảm tự tính từ was và now" },
+          "text": { "type": "string", "description": "Bắt buộc với kind text. Với price là nhãn nhỏ phía trên" },
+          "was": { "type": "number", "exclusiveMinimum": 0, "description": "price: giá gốc (đồng)" },
+          "now": { "type": "number", "exclusiveMinimum": 0, "description": "price: giá bán (đồng), nhỏ hơn was" },
           "start": { "type": "number", "minimum": 0 },
           "end": { "type": "number", "minimum": 0 },
           "position": { "enum": ["top", "center", "bottom"], "default": "top" },
           "color": { "type": "string", "default": "#FFFFFF" },
           "background": { "type": "string", "default": "#FF2D55" }
+        }
+      }
+    },
+    "zooms": {
+      "type": "array",
+      "description": "Zoom giật vào khung hình (punch-in) để tạo nhịp, không cần cảnh mới",
+      "items": {
+        "type": "object",
+        "required": ["start", "end"],
+        "additionalProperties": false,
+        "properties": {
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "minimum": 0 },
+          "scale": { "type": "number", "minimum": 1, "maximum": 2, "default": 1.12 }
         }
       }
     },

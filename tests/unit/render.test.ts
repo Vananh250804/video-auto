@@ -37,3 +37,17 @@ test("loadCaptionStyle nạp preset, none thì không in phụ đề", async () 
   assert.equal(await loadCaptionStyle("none"), null);
   await assert.rejects(loadCaptionStyle("khong-co"), /Không có preset/);
 });
+
+test("validateEdit: overlay giá và zoom", () => {
+  validateEdit({ video: "a.mp4", overlays: [{ kind: "price", was: 299000, now: 199000, start: 1, end: 4 }], zooms: [{ start: 1, end: 2, scale: 1.1 }] });
+  assert.throws(
+    () => validateEdit({ video: "a.mp4", overlays: [{ kind: "price", was: 100, now: 200, start: 1, end: 2 }, { kind: "gif", text: "x", start: 1, end: 2 }], zooms: [{ start: 3, end: 2, scale: 5 }] }),
+    (err: Error) => ["now phải nhỏ hơn was", "kind", "zooms[0].end", "zooms[0].scale"].every((s) => err.message.includes(s)),
+  );
+});
+
+test("sheetTimes chụp mở đầu, giữa và cuối, không vượt độ dài", async () => {
+  const { sheetTimes } = await import("../../core/qa/contact-sheet.ts");
+  assert.deepEqual(sheetTimes(20), [0.3, 1.5, 5, 10, 15, 19.8]);
+  assert.ok(sheetTimes(1).every((t) => t >= 0 && t < 1));
+});
