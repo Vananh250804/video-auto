@@ -1,0 +1,107 @@
+# Danh mục sfx cho video one-shot. Tạo bằng: npm run sfx -- generate
+# prompt: mô tả tiếng Anh gửi ElevenLabs Sound Effects. use: khi nào nên dùng (edit-planner đọc dòng này).
+# duration: giây (0.5 đến 30). File kết quả: assets/sfx/<group>-<name>.mp3
+
+transition:
+  whoosh-fast:
+    duration: 0.7
+    prompt: "Fast cinematic whoosh, quick air swipe passing close by, clean, no music"
+    use: "chuyển cảnh nhanh, camera lia nhanh, chữ bay vào"
+  whoosh-soft:
+    duration: 1.0
+    prompt: "Soft gentle airy whoosh transition, smooth and subtle, no music"
+    use: "chuyển cảnh nhẹ, chữ trượt vào chậm"
+  swoosh:
+    duration: 0.6
+    prompt: "Sharp swoosh of a thin stick swung quickly through the air, single swing"
+    use: "chữ hoặc sản phẩm vụt qua, cắt cảnh dứt khoát"
+  riser-short:
+    duration: 1.5
+    prompt: "Short tension riser, rising pitch noise sweep building up, ends abruptly, no impact"
+    use: "dồn nén ngay trước khi lộ giá hoặc ưu đãi, đặt kết thúc đúng lúc chữ hiện"
+  riser-long:
+    duration: 3.0
+    prompt: "Cinematic tension riser building up over three seconds, rising synth and noise, ends abruptly"
+    use: "dồn nén dài trước khoảnh khắc lớn (mở hộp, before/after)"
+  sweep:
+    duration: 1.2
+    prompt: "Reverse cymbal swell sweep, short, smooth transition"
+    use: "chuyển đoạn mềm, trước khi vào phần mới"
+
+ui:
+  click:
+    duration: 0.5
+    prompt: "Single crisp computer mouse click, dry, close mic"
+    use: "bấm nút, chỉ vào giỏ hàng, chọn sản phẩm"
+  pop:
+    duration: 0.5
+    prompt: "Short cute pop sound for text appearing on screen, clean"
+    use: "chữ highlight hiện lên (mặc định)"
+  pop-bubble:
+    duration: 0.5
+    prompt: "Playful cartoon bubble pop, bright and bouncy"
+    use: "icon, sticker, emoji hiện lên, giọng vui"
+  beep:
+    duration: 0.5
+    prompt: "Short clean digital UI beep notification, single tone"
+    use: "đánh dấu, đếm ngược, gạch đầu dòng"
+  ding:
+    duration: 1.0
+    prompt: "Bright bell ding notification, cheerful success chime, single hit"
+    use: "ý đúng, mẹo hay, thông báo quà tặng"
+  ka-ching:
+    duration: 1.2
+    prompt: "Cash register ka-ching sound, coins, retail checkout"
+    use: "hiện giá, giảm giá, đơn hàng"
+
+foley:
+  footsteps:
+    duration: 1.5
+    prompt: "Two footsteps of sneakers on a wooden floor, close mic, no music"
+    use: "người bước vào khung hình, đi tới sản phẩm"
+  tap:
+    duration: 0.5
+    prompt: "Finger tapping twice on a smartphone glass screen, close mic"
+    use: "chạm màn hình, chạm vào sản phẩm"
+  knock:
+    duration: 0.8
+    prompt: "Two knocks on a wooden door, close mic"
+    use: "gõ vào hộp, gõ vào vật để thể hiện độ chắc"
+  put-down:
+    duration: 0.6
+    prompt: "Small object placed down firmly on a wooden table, soft thud"
+    use: "đặt sản phẩm xuống bàn, vật chạm nhau"
+  gasp:
+    duration: 0.8
+    prompt: "Short surprised human gasp, female, close mic, no music"
+    use: "bất ngờ, ngạc nhiên vì giá rẻ hoặc kết quả"
+  breath:
+    duration: 0.7
+    prompt: "Short quick human inhale breath, close mic"
+    use: "khoảng nghỉ trước câu quan trọng, lúc hồi hộp"
+  hiccup:
+    duration: 0.5
+    prompt: "Single human hiccup, comedic, close mic"
+    use: "tình huống hài, lỡ lời"
+
+impact:
+  bass-drop:
+    duration: 2.0
+    prompt: "Deep cinematic bass drop impact with sub rumble tail"
+    use: "khoảnh khắc lớn nhất (lộ giá sốc, before/after), dùng 1 lần mỗi video"
+  sub-hit:
+    duration: 1.5
+    prompt: "Deep sub bass boom hit, short, punchy"
+    use: "nhấn mạnh con số, chữ to giữa màn hình"
+  thud:
+    duration: 0.8
+    prompt: "Heavy dull thud impact, punchy, no reverb"
+    use: "chữ đập xuống, kết thúc câu dứt khoát"
+  bell:
+    duration: 2.0
+    prompt: "Single bright bell strike with short ring out"
+    use: "kết thúc, chốt ý, lời kêu gọi mua"
+  chord-hit:
+    duration: 1.5
+    prompt: "Short dramatic orchestral chord stab hit"
+    use: "tiết lộ bất ngờ, plot twist"

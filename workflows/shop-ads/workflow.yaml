@@ -12,4 +12,4 @@ defaults:
   captionStyle: tiktok
   originalVolume: 1
   overlays_hint: "Làm nổi bật giá, % giảm, quà tặng, freeship, lời kêu gọi mua (bấm giỏ hàng). 2 đến 4 chữ highlight."
-  sfx_hint: "Tiếng pop khi chữ highlight hiện."
+  sfx_hint: "Pop hoặc ding khi chữ highlight hiện, ka-ching hoặc sub-hit khi hiện giá, whoosh khi chuyển cảnh nhanh, foley (đặt sản phẩm, chạm) khi thấy rõ hành động trong lời nói."

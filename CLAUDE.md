@@ -34,6 +34,7 @@ npm run plan -- <video> --captions <captions.json> --workflow shop-ads --request
 npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
 npm run studio                        # xem template Remotion
 npm run qa -- <video>                 # kiểm tra video cuối
+npm run sfx -- generate | pick <tên> <số> | list   # thư viện sfx (ElevenLabs)
 npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
 npm run bot                           # bật bot Telegram
 npm run bot:install                   # bot chạy nền, tự bật khi đăng nhập (bot:status, bot:uninstall)
@@ -51,7 +52,7 @@ npm run typecheck
 - `remotion-render`: render từ `edit.json` (phụ đề kiểu TikTok, chữ highlight, sfx, nhạc)
 - `edit-planner`: yêu cầu tự do → `edit.json` (Claude qua `claude -p`)
 - `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
-
+- `sfx-library`: tạo sfx one-shot bằng ElevenLabs Sound Effects, chọn bản nháp vào `assets/sfx/`
 - `video-qa`: kiểm tra khung đen, đứng hình, mất tiếng, âm lượng, độ dài
 
 ## Luồng tự động
@@ -70,5 +71,5 @@ npm run typecheck
 ## Provider
 
 - Giao diện chung: `core/contracts/providers.ts`. Thêm provider: viết class trong `integrations/<loại>/<tên>/`, đăng ký trong `integrations/registry.ts`.
-- Hiện có: ElevenLabs (TTS + ASR), Claude (LLM, qua lệnh `claude -p`, chạy trong thư mục tạm để không nạp CLAUDE.md này). Vbee, Saydi, Whisper chờ thêm.
+- Hiện có: ElevenLabs (TTS + ASR + Sound Effects), Claude (LLM, qua lệnh `claude -p`, chạy trong thư mục tạm để không nạp CLAUDE.md này). Vbee, Saydi, Whisper chờ thêm.
 - Prompt gọi Claude tự động nằm trong `prompts/`. Claude phải trả JSON; code tự làm sạch, kiểm tra và hỏi lại 1 lần nếu sai.

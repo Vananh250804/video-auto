@@ -37,3 +37,5 @@ elevenlabs:
   tts_model: eleven_v3        # hoặc eleven_flash_v2_5 (rẻ, nhanh hơn)
   asr_model: scribe_v2
   voice_id: ""                # để trống thì lấy ELEVENLABS_VOICE_ID trong .env
+  sfx_model: eleven_text_to_sound_v2
+  sfx_prompt_influence: 0.6   # 0 đến 1: càng cao càng bám sát mô tả, thấp thì đa dạng hơn

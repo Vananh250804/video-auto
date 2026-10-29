@@ -29,6 +29,6 @@ Bạn (Claude) có thể tự viết `edit.json` theo `schemas/edit.schema.json`
 
 - Video truyền vào phải là bản cuối về thời gian (đã cắt, đã ghép giọng) và `captions.json` khớp video đó.
 - Workflow: `shop-ads` (quảng cáo quay thật), `faceless` (giọng AI, bỏ tiếng gốc), `dubbing` (lồng tiếng, giữ tiếng gốc nhỏ). Mặc định từng loại ở `workflows/<tên>/workflow.yaml`.
-- Claude chỉ được dùng sfx, nhạc có trong `assets/sfx`, `assets/music`. Muốn có sfx, chép file vào đó trước.
+- Claude chỉ được dùng sfx, nhạc có trong `assets/sfx`, `assets/music`. Sfx mới tạo bằng skill `sfx-library`; mô tả `use` trong `assets/sfx/catalog.yaml` được đưa vào prompt.
 - Prompt nằm ở `prompts/edit-planner/plan.md`. Sửa prompt để đổi phong cách mặc định.
 - Nếu `dropped` không rỗng, báo người dùng những gì bị bỏ.

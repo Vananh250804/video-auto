@@ -67,3 +67,17 @@ test("checkScript không báo nhầm từ thường", () => {
   const r = checkScript("Sản phẩm có giá trị sử dụng lâu dài, mình rất thích.", { wordsPerSecond: 3.2 });
   assert.deepEqual(r.issues, []);
 });
+
+test("danh mục sfx đọc được và mô tả đi kèm file cho prompt", async () => {
+  const { loadSfxCatalog, describeSfxFiles } = await import("../../core/audio/sfx.ts");
+  const catalog = loadSfxCatalog();
+  assert.ok(catalog.length > 0);
+  for (const e of catalog) {
+    assert.match(e.file, /^assets\/sfx\/[a-z]+-[a-z0-9-]+\.mp3$/);
+    assert.ok(e.duration >= 0.5 && e.duration <= 30, e.file);
+    assert.ok(e.prompt && e.use, e.file);
+  }
+  const text = describeSfxFiles([catalog[0].file, "assets/sfx/la.wav"]);
+  assert.ok(text.includes(`${catalog[0].file}: ${catalog[0].use}`));
+  assert.ok(text.includes("assets/sfx/la.wav"));
+});

@@ -34,5 +34,7 @@ Bạn là biên tập viên video TikTok/Reels tiếng Việt. Nhiệm vụ: lê
 - Mặc định position "top" để không đè phụ đề.
 - Mọi thời gian nằm trong khoảng 0 đến {{duration}}.
 - Chỉ dùng file sfx, nhạc có trong danh sách. Danh sách trống thì để "sfx": [] và "music": null.
+- Chọn sfx theo mô tả "khi nào dùng" đi kèm file. "at" là lúc tiếng bắt đầu: pop, ding, hit đặt đúng "start" của chữ highlight; riser đặt sao cho kết thúc đúng lúc chữ hiện (at = start - độ dài riser).
+- Không dồn sfx: tối đa 1 sfx mỗi 1.5 giây, impact mạnh (bass-drop, sub-hit) tối đa 1 đến 2 lần mỗi video. Volume: ui và foley 0.5 đến 0.8, impact 0.6 đến 0.9, transition 0.4 đến 0.7.
 - Giá viết đúng như người nói (ví dụ "CHỈ 199K").
 {{retry}}
