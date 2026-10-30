@@ -50,3 +50,10 @@ test("đọc log blackdetect, freezedetect, ebur128", () => {
   assert.equal(parseLoudness("  Integrated loudness:\n    I:         -16.2 LUFS\n"), -16.2);
   assert.equal(parseLoudness("  Integrated loudness:\n    I:         -inf LUFS\n"), -Infinity);
 });
+
+test("tin nhắn duyệt kịch bản hiện điểm hook tự chấm", async () => {
+  const { scriptMessage } = await import("../../bot/bot.ts");
+  const msg = scriptMessage("Câu 1.", { words: 2, estimatedSec: 1, issues: [] }, { type: "Gọi đúng người", score: 8, question: "Loa này hít có chắc không?" });
+  assert.match(msg, /Hook: Gọi đúng người · 8\/10/);
+  assert.match(msg, /Loa này hít có chắc không\?/);
+});

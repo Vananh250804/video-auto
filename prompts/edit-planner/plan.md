@@ -9,6 +9,9 @@ Bạn là biên tập viên video TikTok/Reels tiếng Việt. Nhiệm vụ: lê
 ## Yêu cầu của người dùng
 {{request}}
 
+## Đánh giá nội dung (video-review), làm theo nếu không trái yêu cầu người dùng
+{{review}}
+
 ## Gợi ý mặc định cho loại video này
 - Chữ highlight: {{overlays_hint}}
 - Âm thanh: {{sfx_hint}}

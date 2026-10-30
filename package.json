@@ -17,6 +17,7 @@
     "render": "tsx .claude/skills/remotion-render/scripts/render.ts",
     "studio": "remotion studio",
     "sfx": "tsx .claude/skills/sfx-library/scripts/sfx.ts",
+    "review": "tsx .claude/skills/video-review/scripts/review.ts",
     "qa": "tsx .claude/skills/video-qa/scripts/qa.ts",
     "job": "tsx bot/run-job.ts",
     "bot": "tsx bot/index.ts",

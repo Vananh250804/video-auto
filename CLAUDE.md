@@ -34,6 +34,7 @@ npm run plan -- <video> --captions <captions.json> --workflow shop-ads --request
 npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remotion)
 npm run studio                        # xem template Remotion
 npm run qa -- <video>                 # kiểm tra video cuối
+npm run review -- <video> --captions <captions.json>   # gói đánh giá cho skill video-review
 npm run sfx -- generate | pick <tên> <số> | list   # thư viện sfx (ElevenLabs)
 npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
 npm run bot                           # bật bot Telegram
@@ -53,6 +54,7 @@ npm run typecheck
 - `edit-planner`: yêu cầu tự do → `edit.json` (Claude qua `claude -p`)
 - `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
 - `sfx-library`: tạo sfx one-shot bằng ElevenLabs Sound Effects, chọn bản nháp vào `assets/sfx/`
+- `video-review`: đánh giá hook (/10 theo PM2), lan man, hình ảnh; 2 sub-agent `hook-content-critic` + `visual-critic` (`.claude/agents/`) chấm chéo độc lập
 - `video-qa`: kiểm tra khung đen, đứng hình, mất tiếng, âm lượng, độ dài
 
 ## Luồng tự động

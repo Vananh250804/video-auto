@@ -94,3 +94,29 @@ test("sanitizePlan: zoom bỏ cái ngắn/chồng, kẹp scale; overlay giá c�
   assert.deepEqual(plan.zooms, [{ start: 1, end: 3, scale: 1.12 }, { start: 4, end: 6, scale: 1.3 }]);
   assert.equal(dropped.length, 3);
 });
+
+test("gói đánh giá: khoảng không lời, câu đệm, giá, từ rủi ro, CTA", async () => {
+  const { analyzeCaptions, transcriptMarkdown, frameTimes } = await import("../../core/review/video-pack.ts");
+  const cap = (start: number, end: number, text: string) => ({ start, end, text, words: [] });
+  const caps = [
+    cap(0.5, 2, "Loa này chỉ 199k thôi anh em ạ"),
+    cap(2, 4, "Nó của nhà Minifun, ngon vãi anh em ạ"),
+    cap(10, 12, "Bấm giỏ hàng nhé, mình đảm bảo"),
+  ];
+  const s = analyzeCaptions(caps, 14);
+  assert.deepEqual(s.gaps, [{ start: 4, end: 10, sec: 6 }, { start: 12, end: 14, sec: 2 }]);
+  assert.deepEqual(s.priceMentions.map((p) => p.at), [0.5]); // "của" không bị nhầm là "củ"
+  assert.deepEqual(s.ctaMentions.map((p) => p.at), [10]);
+  assert.deepEqual(s.risky.map((r) => r.phrase).sort(), ["vãi", "đảm bảo"]);
+  assert.deepEqual(s.fillers, [{ phrase: "anh em ạ", count: 2 }]);
+  assert.match(transcriptMarkdown(caps, s), /N02 \[2\.00–4\.00\][^\n]*\n— không có lời 4\.00–10\.00 \(6s\) —\nN03/);
+  assert.deepEqual(frameTimes(10), [0, 0.5, 1, 1.5, 2, 3, 6, 9, 9.9]);
+});
+
+test("reviewForPrompt chỉ lấy phần việc sửa của báo cáo", async () => {
+  const { reviewForPrompt } = await import("../../core/planner/edit-planner.ts");
+  const report = "# ĐÁNH GIÁ\n## Hook\nchi tiết dài\n## 3 việc sửa ưu tiên\n1. chữ từ 0s\n## Kết luận: CHỈNH_NHẸ\n";
+  const out = reviewForPrompt(report);
+  assert.ok(out.includes("chữ từ 0s") && out.includes("CHỈNH_NHẸ"));
+  assert.ok(!out.includes("chi tiết dài"));
+});

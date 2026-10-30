@@ -33,6 +33,10 @@ npm run script -- check "kich-ban.txt" --seconds 30
 - `claim`: tốt nhất, số 1, cam kết, điều trị... dễ bị từ chối quảng cáo
 - `sentence`: câu quá 30 từ
 
+## Tự chấm hook (PM2)
+
+Claude chấm câu hook theo 5 tiêu chí của PM2 (cụ thể, lệch dự đoán nhưng đúng, liên quan người mua, mở câu hỏi, trả lời được), mỗi tiêu chí 0–2. Dưới 7/10 thì tự viết lại trước khi trả. Kết quả lưu ở `review.json` → `hook` (`type`, `score`, `question`), bot hiện kèm khi xin duyệt. Đây là Claude tự chấm, không thay cho người duyệt; muốn chấm độc lập dùng skill `video-review`.
+
 ## Quy tắc
 
 - Không bao giờ chạy `approve` thay người dùng. Chỉ duyệt khi người dùng nói rõ là đồng ý.
