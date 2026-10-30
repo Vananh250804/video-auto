@@ -6,7 +6,7 @@ import { createJob, loadJob, saveJob, type JobState } from "../core/jobs/job.ts"
 import { stepsFor, type JobEvent, type RunnerDeps, runJob } from "../core/jobs/runner.ts";
 import { reviseScript } from "../core/planner/script-writer.ts";
 import { SerialQueue } from "../core/queue/queue.ts";
-import { setStatus } from "../core/review/review-state.ts";
+import { setStatus, type HookSelfScore } from "../core/review/review-state.ts";
 import type { ScriptCheck } from "../core/review/script-checks.ts";
 import { MAX_DOWNLOAD_BYTES, MAX_UPLOAD_BYTES, type TelegramApi, type TgButton, type TgFile, type TgUpdate } from "../integrations/delivery/telegram/index.ts";
 import { safeFileName } from "../integrations/storage/google-drive/index.ts";
@@ -31,9 +31,10 @@ export function newJobId(now = new Date()): string {
   return `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}-${randomBytes(2).toString("hex")}`;
 }
 
-function scriptMessage(script: string, check: ScriptCheck): string {
+export function scriptMessage(script: string, check: ScriptCheck, hook?: HookSelfScore): string {
   const issues = check.issues.length ? `\n\n⚠️ Lưu ý:\n${check.issues.map((i) => `• ${i.message}`).join("\n")}` : "";
-  return `📝 Kịch bản (khoảng ${check.estimatedSec}s, ${check.words} từ):\n\n${script}${issues}`;
+  const hookLine = hook ? `\n\n🎣 Hook: ${hook.type} · ${hook.score}/10${hook.question ? `\nNgười xem sẽ hỏi: "${hook.question}"` : ""}` : "";
+  return `📝 Kịch bản (khoảng ${check.estimatedSec}s, ${check.words} từ):\n\n${script}${hookLine}${issues}`;
 }
 
 // Video gửi thẳng (dạng video hoặc dạng file)
@@ -85,7 +86,7 @@ export class VideoBot {
         if (event.step === "render") await this.send(job.chatId, `🎬 Job ${job.id}: đang render...`);
         break;
       case "waiting_approval":
-        await this.send(job.chatId, scriptMessage(event.script, event.check), this.approvalButtons(job.id));
+        await this.send(job.chatId, scriptMessage(event.script, event.check, event.hook), this.approvalButtons(job.id));
         break;
       case "done": {
         // Video vừa đủ nhỏ thì gửi thẳng vào Telegram để xem ngay trên điện thoại
@@ -227,7 +228,7 @@ export class VideoBot {
     await setStatus(dir, "changes_requested", feedback);
     await this.send(chatId, "✏️ Đang viết lại kịch bản...");
     const { state } = await reviseScript({ dir, feedback, workflow: job.workflow, llm: this.deps.runnerDeps.llm() });
-    await this.send(chatId, scriptMessage(state.script, state.check), this.approvalButtons(job.id));
+    await this.send(chatId, scriptMessage(state.script, state.check, state.hook), this.approvalButtons(job.id));
   }
 
   private async statusText(chatId: number): Promise<string> {

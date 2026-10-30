@@ -16,6 +16,7 @@ export interface PlanInput {
   captions?: string;
   workflow: string;
   request?: string; // yêu cầu tự do của người dùng, bỏ trống = mặc định
+  review?: string; // báo cáo của skill video-review (report.md), planner làm theo phần việc sửa
   llm: LlmProvider;
 }
 
@@ -140,6 +141,7 @@ export async function planEdit(input: PlanInput): Promise<PlanResult> {
     caption_styles: [...ctx.captionStyles, "none"].join(", "),
     sfx_files: describeSfxFiles(ctx.sfxFiles) || "(trống)",
     music_files: ctx.musicFiles.join(", ") || "(trống)",
+    review: input.review?.trim() ? reviewForPrompt(input.review) : "(không có)",
     retry: "",
   };
 
@@ -168,4 +170,10 @@ function toProjectPath(p: string): string {
   const abs = resolvePath(p);
   const rel = relative(projectRoot(), abs);
   return rel.startsWith("..") ? abs : rel.split("\\").join("/");
+}
+
+// Chỉ lấy phần việc sửa và gợi ý của báo cáo video-review, giới hạn độ dài để prompt gọn
+export function reviewForPrompt(report: string): string {
+  const parts = report.split(/^## /m).filter((s) => /^(3 việc sửa|Gợi ý cho edit-planner|Kết luận)/i.test(s));
+  return (parts.length ? parts.map((s) => `### ${s.trim()}`).join("\n\n") : report).slice(0, 4000);
 }

@@ -12,7 +12,7 @@ export interface ScriptCheck {
 }
 
 // Cụm từ quảng cáo tuyệt đối hoặc công dụng y tế, dễ bị từ chối khi chạy ads
-const RISKY_PHRASES = [
+export const RISKY_PHRASES = [
   "tốt nhất", "số 1", "số một", "rẻ nhất", "duy nhất", "100%", "cam kết", "đảm bảo",
   "chữa khỏi", "chữa bệnh", "điều trị", "đặc trị", "khỏi hẳn", "thần kỳ", "giảm cân", "vĩnh viễn",
 ];

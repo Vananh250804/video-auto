@@ -6,12 +6,21 @@ import type { ScriptCheck } from "./script-checks.ts";
 // Trạng thái duyệt kịch bản, lưu ở <job>/review.json. Bot Telegram (bước 5) đọc và cập nhật file này.
 export type ReviewStatus = "pending" | "approved" | "changes_requested";
 
+// Claude tự chấm hook theo PM2 khi viết kịch bản (prompts/script-review/write.md)
+export interface HookSelfScore {
+  type: string;
+  score: number;
+  question: string;
+  answered_in?: string;
+}
+
 export interface ReviewState {
   status: ReviewStatus;
   brief: string;
   targetSec?: number;
   script: string;
   check: ScriptCheck;
+  hook?: HookSelfScore;
   history: { at: string; action: "written" | "revised" | "approved" | "changes_requested"; feedback?: string }[];
 }
 

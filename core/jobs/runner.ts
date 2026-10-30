@@ -13,14 +13,14 @@ import { voiceoverVideo } from "../pipeline/voiceover.ts";
 import { DEFAULT_QA, checkVideo, type QaReport } from "../qa/video-qa.ts";
 import { validateEdit, type EditSpec } from "../render/edit-spec.ts";
 import { renderEdit } from "../render/render.ts";
-import { readReview } from "../review/review-state.ts";
+import { readReview, type HookSelfScore } from "../review/review-state.ts";
 import type { ScriptCheck } from "../review/script-checks.ts";
 import { loadJob, saveJob, type JobState } from "./job.ts";
 
 export type JobEvent =
   | { type: "step"; step: string }
   | { type: "note"; message: string }
-  | { type: "waiting_approval"; script: string; check: ScriptCheck }
+  | { type: "waiting_approval"; script: string; check: ScriptCheck; hook?: HookSelfScore }
   | { type: "done"; url?: string; final: string; qa?: QaReport }
   | { type: "failed"; step: string; error: string };
 
@@ -97,7 +97,7 @@ const STEPS: Record<string, Step> = {
     // Chưa có kịch bản, hoặc người dùng yêu cầu sửa (bot đã viết lại rồi chạy tiếp)
     if (!job.brief) throw new Error("Thiếu nội dung để viết kịch bản (brief).");
     const { state } = await writeScript({ dir, brief: job.brief, workflow: job.workflow, llm: deps.llm() });
-    await deps.notify(job, { type: "waiting_approval", script: state.script, check: state.check });
+    await deps.notify(job, { type: "waiting_approval", script: state.script, check: state.check, hook: state.hook });
     throw new WaitForApproval();
   },
 
@@ -120,12 +120,14 @@ const STEPS: Record<string, Step> = {
     return r.extendedSec > 2 ? `giọng dài hơn video ${r.extendedSec}s, đã giữ khung cuối` : undefined;
   },
 
-  async plan({ work, job, deps }) {
+  async plan({ dir, work, job, deps }) {
     const defaults = loadWorkflow(job.workflow).defaults;
     let edit: EditSpec;
     let note: string | undefined;
     if (job.request?.trim() || loadConfig().plan.auto_highlight) {
-      const r = await planEdit({ video: job.artifacts.video!, captions: job.artifacts.captions, workflow: job.workflow, request: job.request, llm: deps.llm() });
+      const reportFile = join(dir, "review", "report.md");
+      const review = existsSync(reportFile) ? await readFile(reportFile, "utf8") : undefined;
+      const r = await planEdit({ video: job.artifacts.video!, captions: job.artifacts.captions, workflow: job.workflow, request: job.request, review, llm: deps.llm() });
       edit = r.edit;
       note = [r.notes, ...r.dropped.map((d) => `bỏ: ${d}`)].filter(Boolean).join("; ");
     } else {
