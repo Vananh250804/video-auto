@@ -102,10 +102,11 @@ test("gói đánh giá: khoảng không lời, câu đệm, giá, từ rủi ro,
     cap(0.5, 2, "Loa này chỉ 199k thôi anh em ạ"),
     cap(2, 4, "Nó của nhà Minifun, ngon vãi anh em ạ"),
     cap(10, 12, "Bấm giỏ hàng nhé, mình đảm bảo"),
+    cap(12.5, 13.5, "Chưa đến bảy chục nghìn"),
   ];
   const s = analyzeCaptions(caps, 14);
-  assert.deepEqual(s.gaps, [{ start: 4, end: 10, sec: 6 }, { start: 12, end: 14, sec: 2 }]);
-  assert.deepEqual(s.priceMentions.map((p) => p.at), [0.5]); // "của" không bị nhầm là "củ"
+  assert.deepEqual(s.gaps, [{ start: 4, end: 10, sec: 6 }]);
+  assert.deepEqual(s.priceMentions.map((p) => p.at), [0.5, 12.5]); // "của" không bị nhầm là "củ"; giá viết bằng chữ vẫn bắt được
   assert.deepEqual(s.ctaMentions.map((p) => p.at), [10]);
   assert.deepEqual(s.risky.map((r) => r.phrase).sort(), ["vãi", "đảm bảo"]);
   assert.deepEqual(s.fillers, [{ phrase: "anh em ạ", count: 2 }]);
