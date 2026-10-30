@@ -14,7 +14,7 @@ const FILLERS = ["anh em ạ", "anh em nhá", "anh em nha", "anh em nhé", "cả
 const SPOKEN_RISKY = ["vãi", "vl", "đéo", "chất lượng nhất", "không đâu bằng"];
 // \b của JS không hiểu chữ có dấu, nên tự viết biên của từ
 const word = (alts: string) => new RegExp(`(?<![\\p{L}\\p{N}])(${alts})(?![\\p{L}\\p{N}])`, "iu");
-const PRICE = word("\\d+(?:[.,]\\d+)?\\s*(?:k|nghìn|ngàn|triệu|tr|đồng|đ)|lít|lốp|lốt|xị|củ|giá");
+const PRICE = word("\\d+(?:[.,]\\d+)?\\s*(?:k|nghìn|ngàn|triệu|tr|đồng|đ)|nghìn|ngàn|triệu|chục|lít|lốp|lốt|xị|củ|giá");
 const CTA = word("giỏ hàng|bấm|inbox|nhắn tin|link|mua ngay|đặt hàng|đặt ngay|chốt đơn|theo dõi|follow");
 
 export interface ReviewStats {

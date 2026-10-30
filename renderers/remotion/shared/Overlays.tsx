@@ -58,19 +58,21 @@ const PriceDrop: React.FC<{ overlay: RenderOverlay; fontSize: number }> = ({ ove
 const OverlayBox: React.FC<{ overlay: RenderOverlay; layout: Layout; durationInFrames: number }> = ({ overlay, layout, durationInFrames }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
-  const fontSize = Math.min(width, height) * layout.overlayScale;
+  const baseSize = Math.min(width, height) * layout.overlayScale;
+  // Chữ in hoa đậm rộng khoảng 0.7 cỡ chữ mỗi ký tự; chữ dài thì thu nhỏ để luôn nằm gọn 1 dòng trong vùng an toàn
+  const maxPx = width * layout.maxTextWidth - baseSize * 0.9;
+  const fontSize = overlay.kind === "price" ? baseSize : Math.min(baseSize, maxPx / (Math.max(1, overlay.text.length) * 0.7));
   const pop = spring({ frame, fps, config: { damping: 10, stiffness: 180, mass: 0.7 } });
   const fadeOut = interpolate(frame, [durationInFrames - 6, durationInFrames], [1, 0], clamp);
   const y = { top: layout.overlayTopY, center: layout.overlayCenterY, bottom: layout.overlayBottomY }[overlay.position];
 
   return (
+    // Khung ngoài rộng cả chiều ngang rồi căn giữa bằng flex: đặt left 50% + max-content thì hộp chữ chỉ được rộng tối đa nửa khung, chữ 15 ký tự cũng bị ngắt dòng
     <AbsoluteFill>
+      <div style={{ position: "absolute", left: 0, right: 0, top: `${y * 100}%`, transform: "translateY(-50%)", display: "flex", justifyContent: "center" }}>
       <div
         style={{
-          position: "absolute",
-          left: "50%",
-          top: `${y * 100}%`,
-          transform: `translate(-50%, -50%) scale(${pop}) rotate(${(1 - pop) * -6}deg)`,
+          transform: `scale(${pop}) rotate(${(1 - pop) * -6}deg)`,
           opacity: fadeOut,
           width: "max-content",
           maxWidth: `${layout.maxTextWidth * 100}%`,
@@ -83,10 +85,12 @@ const OverlayBox: React.FC<{ overlay: RenderOverlay; layout: Layout; durationInF
           fontSize,
           lineHeight: 1.15,
           textAlign: "center",
+          whiteSpace: overlay.kind === "price" ? undefined : "nowrap",
           boxShadow: `0 ${fontSize * 0.08}px ${fontSize * 0.3}px rgba(0,0,0,0.35)`,
         }}
       >
         {overlay.kind === "price" ? <PriceDrop overlay={overlay} fontSize={fontSize} /> : overlay.text}
+      </div>
       </div>
     </AbsoluteFill>
   );
