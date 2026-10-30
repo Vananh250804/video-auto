@@ -5,7 +5,7 @@ description: Đánh giá nội dung video bán hàng / faceless trước hoặc 
 
 # video-review
 
-Luật chấm: `references/pm2-shop-ads.md` (PM2 bản bán hàng). Bản gốc: `references/pm2-original.md` (dùng nguyên cho kịch bản faceless/kể chuyện).
+Kinh nghiệm edit chung: `../video-auto/reference/KINH-NGHIEM-EDIT.md` (đọc trước khi dựng). Luật chấm: `references/pm2-shop-ads.md` (PM2 bản bán hàng). Bản gốc: `references/pm2-original.md` (dùng nguyên cho kịch bản faceless/kể chuyện).
 
 ## Cách chạy
 
