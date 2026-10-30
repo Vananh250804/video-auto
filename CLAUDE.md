@@ -4,6 +4,8 @@ Hệ thống edit video tự động: nhận video thô từ Google Drive qua l�
 
 ## Quy tắc làm việc
 
+- Người dùng gõ `/video-auto` hoặc nhờ cài đặt, edit video: dùng skill `video-auto` (cài đặt từng bước, vòng làm việc, luật cứng). Đọc `.claude/skills/video-auto/reference/KINH-NGHIEM-EDIT.md` trước khi edit video.
+
 - Trả lời bằng tiếng Việt, ngắn gọn, đúng trọng tâm.
 - Thiếu thông tin thì hỏi, không tự suy diễn.
 - Trước khi làm việc lớn, đưa kế hoạch 3 đến 5 bước để người dùng duyệt.
@@ -35,6 +37,8 @@ npm run render -- <edit.json> --out <file.mp4>     # render thành phẩm (Remot
 npm run studio                        # xem template Remotion
 npm run qa -- <video>                 # kiểm tra video cuối
 npm run review -- <video> --captions <captions.json>   # gói đánh giá cho skill video-review
+npm run setup -- status | check all | open-env   # cài đặt và kiểm tra máy (skill video-auto)
+npm run loudnorm -- <video> --out <file>   # chuẩn hóa âm lượng -14 LUFS
 npm run sfx -- generate | pick <tên> <số> | list   # thư viện sfx (ElevenLabs)
 npm run job -- <link Drive|file> --workflow shop-ads --request "..."   # chạy cả luồng, không cần Telegram
 npm run bot                           # bật bot Telegram
@@ -53,6 +57,7 @@ npm run typecheck
 - `remotion-render`: render từ `edit.json` (phụ đề kiểu TikTok, chữ highlight, sfx, nhạc)
 - `edit-planner`: yêu cầu tự do → `edit.json` (Claude qua `claude -p`)
 - `script-review`: Claude viết kịch bản, tự kiểm tra, chờ người dùng duyệt
+- `video-auto`: cửa vào cho khách: cài đặt lần đầu từng bước (`ONBOARDING.md`), vòng làm việc, luật cứng, kinh nghiệm edit, hỏi đáp
 - `sfx-library`: tạo sfx one-shot bằng ElevenLabs Sound Effects, chọn bản nháp vào `assets/sfx/`
 - `video-review`: đánh giá hook (/10 theo PM2), lan man, hình ảnh; 2 sub-agent `hook-content-critic` + `visual-critic` (`.claude/agents/`) chấm chéo độc lập
 - `video-qa`: kiểm tra khung đen, đứng hình, mất tiếng, âm lượng, độ dài
